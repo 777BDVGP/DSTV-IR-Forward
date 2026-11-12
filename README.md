@@ -44,17 +44,111 @@ All three run on the same PCB (`PCB/IR_FORWARD_V1`), with a WEMOS LOLIN S2 Mini
 (ESP32-S2). Printable enclosure parts (.stl: case, lid, IR clip, LED holders)
 are in `Enclosure/`; the PCB (schematic, board, Gerber zip) is in `PCB/`.
 
-## Hardware
+## Building one, step by step
 
-- WEMOS LOLIN S2 Mini (ESP32-S2)
-- TSOP31238 IR receiver (IR IN) — sender / All-in-One; optional on the receiver
-- IR LED(s) via a 2N2222 driver (IR OUT) — receiver / All-in-One
-- Red and green LEDs, buzzer, 230 V supply with surge protection monitor
-- Full pin map: comment block at the top of each project's `src/main.cpp`
+### 1. Order the PCB
+
+Upload `PCB/IR_FORWARD_V1_2026-10-04.zip` (the Gerber files) to a PCB maker
+such as JLCPCB or PCBWay: 2 layers, 1.6 mm, default settings. The same PCB is
+used for the sender, the receiver and the All-in-One. The Eagle schematic and
+board are in `PCB/` (also as `SCHEMATIC.jpg` and `PCB.jpg`).
+
+### 2. Parts on the PCB
+
+| Qty | Part | Value / type | Silkscreen |
+|---|---|---|---|
+| 1 | WEMOS LOLIN **S2 Mini** (ESP32-S2) + 2 × **female** headers | plugs onto the two double pin rows | WEMOS MINI |
+| 1 | AC/DC power module | **MORNSUN LD05-23B05R2-M** (230 V → 5 V) | MORNSUN |
+| 1 | Voltage regulator | **AMS1117-3.3**, SOT-223 | 3.3VOLT |
+| 2 | NPN transistor | **2N2222**, TO-92 | 2N2222 |
+| 1 | Buzzer | **active** buzzer, **5 V**, 12 mm | BUZZER |
+| 3 | Electrolytic capacitor | 220 µF, 16 V | C2, C3, C6 |
+| 2 | Capacitor | 0.1 µF | C1, C5 |
+| 4 | Resistor, through-hole | **130 Ω**, ¼ W (one per IR LED output) | U$2, U$3, U$5, U$7 |
+| 1 | Resistor SMD 0805 | 2.2 kΩ | R1 |
+| 2 | Resistor SMD 0805 | 330 Ω | R2, R5 |
+| 1 | Resistor SMD 0805 | 4.7 kΩ | R48 |
+| 1 | Screw terminal, 5.08 mm, 2-pole | mains in | 220VAC IN |
+| 3 | Pin header 3-pin, 2.54 mm | TSOP, IR LEDs, red/green LED | TSOP31238, IR OUT, RED LED GREEN |
+| 1 | Pin header 2-pin, 2.54 mm | spare input | INPUT |
+| 2 | Pin header 2-pin + jumper | S2 Mini power: fit **LINK 5V**, leave **LINK 3.3V** open | LINK 5V, LINK 3.3V |
+
+All headers are plain 2.54 mm (0.1", DuPont) — the cables use DuPont plugs.
+
+**Surge protection (optional):** these parts only protect the board against
+mains surges and let the firmware watch that protection. You can leave them
+all out:
+
+| Qty | Part | Value / type | Silkscreen |
+|---|---|---|---|
+| 1 | Thermal MOV | **Littelfuse TMOV20RP275E** | LITLE_FUSE |
+| 1 | Optocoupler | **4N35**, DIP-6 | OK1 |
+| 1 | Diode | **M7** (1N4007), SMD | M7 |
+| 1 | LED SMD 0805 | | LED1 |
+| 5 | Resistor SMD 1206 | 10 kΩ | R10–R14 |
+| 1 | Pin header 2-pin + jumper | jumper fitted (off = test "blown") | FUSE_LINK |
+
+Without them, the board's status page shows the surge protection as
+**BLOWN** and the buzzer beeps every 2 seconds. Mute it once on the web page
+(sender: *Settings*, receiver / All-in-One: *MOV* card) — the mute is
+remembered — or leave the buzzer out as well.
+
+### 3. Parts on cables (off the PCB)
+
+| Part | Sender | Receiver | All-in-One | Connects to |
+|---|:-:|:-:|:-:|---|
+| **TSOP31238** IR receiver (38 kHz) | yes | optional (to record sequences on the receiver itself) | yes | TSOP31238 |
+| **IR LED** 940 nm, e.g. TSAL6200 — 1 to 4 | — | yes | yes | IR OUT |
+| **Red** and **green** 5 mm LED | yes | optional | yes | RED LED GREEN |
+| 230 V cable with plug | yes | yes | yes | 220VAC IN |
+
+The red / green LEDs show what happens to each IR signal: on a sender
+**green** = DSTV code forwarded, **red** = other remote, ignored.
+
+### 4. Enclosure
+
+3D-printable parts are in `Enclosure/` (.stl): `Case`, `Case2`, `Case3`,
+`Lid`, `Angle`, `IR_Clip` (holds an IR LED in front of the decoder),
+`RoomLEDHolder` and `RoomLEDSupr` (LED holder and support).
+
+### 5. Assembly
+
+1. Solder the SMD parts first (resistors, AMS1117, and the optional M7 /
+   LED1 / 10 kΩ), then the low through-hole parts, then the tall ones
+   (capacitors, buzzer, terminal, MORNSUN, TMOV).
+2. Mind the polarity of the electrolytic capacitors, the 2N2222s, the 4N35
+   (pin 1 dot), the buzzer (+) and the diode.
+3. Solder the female headers to the **S2 Mini**, so it plugs onto the PCB and
+   can be taken off.
+4. Fit the **LINK 5V** jumper (not LINK 3.3V), and FUSE_LINK if the surge
+   parts are fitted.
+5. Make the cables for the TSOP, the IR LED(s) and the red / green LEDs with
+   2.54 mm DuPont plugs.
+6. **Before connecting mains:** flash the firmware over USB (next section) —
+   the S2 Mini gets its power from USB then. Program it **off** the board or
+   with the 230 V disconnected.
+
+**Safety:** the PCB carries 230 V. Never touch the board while it is
+connected to mains, and always fit it in its closed enclosure. Have the mains
+wiring checked by a qualified person.
+
+### 6. Software on your PC (once)
+
+You need a PC (Windows, macOS or Linux) and a **USB-C data cable** — some
+cables only charge.
+
+1. Install [Visual Studio Code](https://code.visualstudio.com).
+2. In VS Code, open *Extensions* and install **PlatformIO IDE**.
+3. Download this project (*Code → Download ZIP*, or `git clone`) and unzip it.
+4. In VS Code: *File → Open Folder* → the folder of the firmware you want,
+   e.g. `TV_IR_Receiving` (open that folder itself, not the top folder).
+5. The first build downloads the ESP32 tools and libraries by itself
+   (a few minutes, needs internet). Build with the ✓ button in the bottom bar,
+   or `pio run` in the PlatformIO terminal.
 
 ## Build and first flash
 
-1. Install [PlatformIO](https://platformio.org) (VS Code extension or CLI).
+1. Software installed as in step 6 above.
 2. Open the project folder of the firmware you want (e.g. `TV_IR_Receiving`).
 3. Connect the S2 Mini by USB, hold button **0**, tap **RST** (download mode).
 4. Flash over USB:
