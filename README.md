@@ -5,6 +5,31 @@ small board in the bedroom picks up the remote's infrared signal and sends it
 over WiFi (ESP-NOW, board to board) to a board at the decoder, which sends it
 out again on an infrared LED in front of the decoder.
 
+### Why this project: only DSTV gets through
+
+There are many ways to carry infrared from one room to another — IR repeaters,
+"remote extenders", smart IR blasters. They pass on **every** infrared signal
+they see. In a house with several TVs, sound bars and air conditioners that is
+a problem: the bedroom TV remote also switches the lounge TV of the same
+brand, the bedroom sound bar remote changes the lounge sound bar's volume, and
+so on.
+
+**This system deliberately blocks every remote except the DSTV remote.**
+
+- The sender decodes each infrared signal it receives. Only signals in the
+  **DSTV protocol (XMP)** are passed on; everything else — TV, sound bar,
+  aircon, other set-top boxes — is ignored. The LEDs show it: **green** = DSTV
+  code forwarded, **red** = other remote, ignored.
+- The receiver does not replay a recording of the signal: it **rebuilds the
+  DSTV code with exact timing**, so the decoder gets a clean signal even when
+  the bedroom reception was weak.
+- Result: you can use all your remotes normally in every room, and only the
+  DSTV decoder reacts to the bedroom DSTV remote.
+
+The only exception is on purpose and temporary: while you **record an IR
+sequence** from a sender's web page, that sender also passes on other remotes,
+so you can see on the receiver's side that the recorded button works.
+
 Extras on the receiver: record **IR sequences** from any remote (TV, sound
 bar, DSTV), add known codes (e.g. Samsung TV Power ON / OFF), and run them on a
 **weekly schedule** — for example a daily "reset" of TV, decoder and sound bar.
