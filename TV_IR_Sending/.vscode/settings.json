@@ -1,0 +1,5 @@
+{
+    // Git repo is the parent folder IR_FORWARD (shared by TX and RX).
+    // Lets Source Control find it when PlatformIO opens this folder alone.
+    "git.openRepositoryInParentFolders": "always"
+}

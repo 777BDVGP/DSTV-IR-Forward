@@ -1,0 +1,21 @@
+{
+	"folders": [
+		{
+			"name": "TV_IR_Sending (TX)",
+			"path": "TV_IR_Sending"
+		},
+		{
+			"name": "TV_IR_Receiving (RX)",
+			"path": "TV_IR_Receiving"
+		},
+		{
+			"name": "TV_IR_IN_ONE",
+			"path": "TV_IR_IN_ONE"
+		}
+	],
+	"settings": {
+		"files.exclude": {
+			"**/.pio": true
+		}
+	}
+}
