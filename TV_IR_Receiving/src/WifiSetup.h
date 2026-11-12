@@ -12,6 +12,9 @@
 //   channel 0  = join the strongest AP of that SSID on any channel
 //   channel N  = only an AP on channel N (ESP-NOW: RX and every TX must share
 //                one channel — needed when several APs use different channels)
+//   channel 99 = TX only, "Follow receiver": lock to the channel where the RX
+//                beacon was last heard (NVS "wifi"/"rxch"); the TX searches
+//                channels 1-13 for the RX when it is lost (17_EspNow.cpp)
 //   A file without "ver":1 (e.g. an old TV_Remote file) is ignored.
 //
 // Boot:
@@ -39,6 +42,7 @@ class AsyncWebServer;
 #define WIFI_MAX_FAILED_BOOTS  3
 #define WIFI_RESET_PIN         0               // S2 Mini button "0" (LOW = pressed)
 #define WIFI_RESET_HOLD_MS     5000
+#define WIFI_CH_FOLLOW_RX      99              // channel lock "Follow receiver" (TX)
 
 struct WifiCfg {
 	String    ssid;
@@ -61,4 +65,11 @@ const WifiCfg &WifiConfig();     // settings in use
 String         WifiApInfo();     // "AP xx:xx.. (scan -60 dBm)" or a warning, for the log
 
 void           WifiSetupLoop();  // loop(): reset button + reboot after a /wifi save
+
+// "Follow receiver" (channel lock WIFI_CH_FOLLOW_RX, TX only)
+bool           WifiFollowRx();               // this board follows the receiver
+uint8_t        WifiFollowChannel();          // last channel the RX was heard on (0 = unknown)
+void           WifiFollowStore(uint8_t ch);  // remember it (used from the next connect)
+void           WifiSearchMode(bool on);      // RX search running: no auto-reconnect,
+                                             // lost-WiFi / channel checks paused
 void           WifiAddRoutes(AsyncWebServer &server);   // /wifi page (view / change / forget)

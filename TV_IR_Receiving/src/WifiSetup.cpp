@@ -86,7 +86,7 @@ static bool LoadCfg(WifiCfg &c) {
 	c.host    = doc["host"] | "";
 	c.channel = (uint8_t)(doc["channel"] | 0);
 	c.dhcp    = doc["dhcp"] | true;
-	if (c.ssid.isEmpty() || c.channel > 13) { wlog("WifiSettings.json: no SSID / bad channel - ignored"); return false; }
+	if (c.ssid.isEmpty() || (c.channel > 13 && c.channel != WIFI_CH_FOLLOW_RX)) { wlog("WifiSettings.json: no SSID / bad channel - ignored"); return false; }
 	if (c.host.isEmpty()) c.host = defaultHost();
 	if (!c.dhcp) {
 		if (!parseIp(doc["ip"], c.ip) || !parseIp(doc["gw"], c.gw) || !parseIp(doc["sn"], c.sn)) {
@@ -142,10 +142,42 @@ static void SetFails(uint8_t n) {
 // Station connect
 // =============================================================================
 
+// ── "Follow receiver": remembered RX channel (NVS, survives restarts) ────────
+static bool searchMode = false;   // TX is hopping channels looking for the RX
+
+static uint8_t FollowChGet() {
+	Preferences p;
+	uint8_t ch = 0;
+	if (p.begin("wifi", true)) { ch = p.getUChar("rxch", 0); p.end(); }
+	return ch <= 13 ? ch : 0;
+}
+
+static void FollowChSet(uint8_t ch) {
+	if (ch > 13 || FollowChGet() == ch) return;
+	Preferences p;
+	if (p.begin("wifi", false)) { p.putUChar("rxch", ch); p.end(); }
+}
+
+// The channel actually locked to: 0 (any), 1-13, or the remembered RX channel
+static uint8_t LockChannel(const WifiCfg &c) {
+	return c.channel == WIFI_CH_FOLLOW_RX ? FollowChGet() : c.channel;
+}
+
+static String LockText(const WifiCfg &c) {
+	if (c.channel == WIFI_CH_FOLLOW_RX) {
+		uint8_t ch = FollowChGet();
+		return ch ? "follow receiver (ch " + String(ch) + ")" : String("follow receiver (not found yet)");
+	}
+	return c.channel ? String(c.channel) : String("any");
+}
+
 // Strongest AP of the SSID on the locked channel → its BSSID.
 // Up to 3 scans of 500 ms: one short scan can miss a weak AP (a TX at -67 dBm
 // once missed it and joined the SSID on another channel, cutting ESP-NOW).
-static bool FindApOnChannel(const WifiCfg &c, uint8_t bssid[6], int32_t &rssi) {
+static bool FindApOnChannel(const WifiCfg &cfgIn, uint8_t bssid[6], int32_t &rssi) {
+	WifiCfg c = cfgIn;
+	c.channel = LockChannel(cfgIn);
+	if (!c.channel) return false;
 	bool found = false;
 	for (int attempt = 0; attempt < 3 && !found; attempt++) {
 		int n = WiFi.scanNetworks(false, false, false, 500, c.channel);
@@ -170,7 +202,8 @@ static bool Connect(const WifiCfg &c, uint32_t timeoutMs) {
 	if (!c.dhcp) WiFi.config(c.ip, c.gw, c.sn, c.dns);
 
 	const char *pass = c.pass.length() ? c.pass.c_str() : nullptr;
-	if (c.channel) {
+	uint8_t lockCh = LockChannel(c);
+	if (lockCh) {
 		uint8_t bssid[6];
 		int32_t rssi = 0;
 		if (FindApOnChannel(c, bssid, rssi)) {
@@ -178,14 +211,14 @@ static bool Connect(const WifiCfg &c, uint32_t timeoutMs) {
 			snprintf(buf, sizeof(buf), "AP %02X:%02X:%02X:%02X:%02X:%02X (scan %ld dBm)",
 			         bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5], (long)rssi);
 			apInfo = buf;
-			WiFi.begin(c.ssid.c_str(), pass, c.channel, bssid);
+			WiFi.begin(c.ssid.c_str(), pass, lockCh, bssid);
 		} else {
-			apInfo = "WARNING: no " + c.ssid + " AP on channel " + String(c.channel) +
+			apInfo = "WARNING: no " + c.ssid + " AP on channel " + String(lockCh) +
 			         " - ESP-NOW may not reach the other boards";
 			WiFi.begin(c.ssid.c_str(), pass);   // keep web/OTA reachable
 		}
 	} else {
-		apInfo = "(any channel)";
+		apInfo = c.channel == WIFI_CH_FOLLOW_RX ? "(any channel - receiver channel not known yet)" : "(any channel)";
 		WiFi.begin(c.ssid.c_str(), pass);
 	}
 
@@ -331,6 +364,9 @@ static String BuildForm(bool portal) {
 		h += WiFi.localIP().toString();
 		h += F(", channel ");
 		h += WiFi.channel();
+		h += F(" (lock: ");
+		h += LockText(cfg);
+		h += ')';
 		h += F(", ");
 		h += WiFi.RSSI();
 		h += F(" dBm. Saving reboots the board. A wrong setting makes the board open its setup WiFi (IR-FORWARD-");
@@ -348,6 +384,11 @@ static String BuildForm(bool portal) {
 	h += F("'></td></tr><tr><td>Password</td><td><input id='pass' name='pass' type='password' maxlength='63' placeholder='");
 	h += have ? F("unchanged") : F("WiFi password");
 	h += F("'></td></tr><tr><td>Channel lock</td><td><select id='channel' name='channel'><option value='0'>Any channel</option>");
+	if (role == "TX") {
+		h += F("<option value='99'");
+		if (!have || c.channel == WIFI_CH_FOLLOW_RX) h += F(" selected");
+		h += F(">Follow receiver</option>");
+	}
 	for (int ch = 1; ch <= 13; ch++) {
 		h += F("<option value='");
 		h += ch;
@@ -357,7 +398,13 @@ static String BuildForm(bool portal) {
 		h += ch;
 		h += F("</option>");
 	}
-	h += F("</select></td></tr><tr><td>Get IP from router (DHCP)</td><td><input id='dhcp' name='dhcp' type='checkbox' value='1' onchange='dh()'");
+	h += F("</select>");
+	h += role == "TX"
+	   ? F("<br><small>Follow receiver: this sender finds the receiver's channel by itself (recommended). "
+	       "Any: one router. A number: the same on every board.</small>")
+	   : F("<br><small>Any: one router or a mesh on one channel. Several access points on different "
+	       "channels: pick one (see Which access points does this board hear?).</small>");
+	h += F("</td></tr><tr><td>Get IP from router (DHCP)</td><td><input id='dhcp' name='dhcp' type='checkbox' value='1' onchange='dh()'");
 	if (!have || c.dhcp) h += F(" checked");
 	h += F("></td></tr>");
 	h += F("<tr class='st'><td>IP address</td><td><input name='ip' value='");
@@ -407,7 +454,7 @@ static bool FormToCfg(AsyncWebServerRequest *req, bool keepPass, WifiCfg &n, Str
 
 	if (n.ssid.isEmpty() || n.ssid.length() > 32) { err = "WiFi name (SSID) is required"; return false; }
 	if (n.pass.length() > 0 && n.pass.length() < 8) { err = "Password must be at least 8 characters (or empty for an open WiFi)"; return false; }
-	if (n.channel > 13)                             { err = "Bad channel"; return false; }
+	if (n.channel > 13 && !(n.channel == WIFI_CH_FOLLOW_RX && role == "TX")) { err = "Bad channel"; return false; }
 	if (!ValidHost(n.host))                         { err = "Host name: letters, digits and '-' only (max 31)"; return false; }
 	if (!n.dhcp) {
 		if (!n.ip.fromString(Arg(req, "ip")))  { err = "Bad IP address"; return false; }
@@ -568,9 +615,10 @@ static bool scanBusy = false;   // /wifiscan scan running (below)
 
 static void CheckLockedChannel() {
 	static uint32_t lastCheckMs = 0;
-	if (scanBusy) return;
-	if (!cfgValid || !cfg.channel || WiFi.status() != WL_CONNECTED) return;
-	if (WiFi.channel() == cfg.channel) return;
+	if (scanBusy || searchMode) return;
+	uint8_t lockCh = LockChannel(cfg);
+	if (!cfgValid || !lockCh || WiFi.status() != WL_CONNECTED) return;
+	if (WiFi.channel() == lockCh) return;
 	if (millis() - lastCheckMs < WIFI_CHANNEL_RECHECK_MS) return;
 	lastCheckMs = millis();
 
@@ -579,7 +627,7 @@ static void CheckLockedChannel() {
 	if (!FindApOnChannel(cfg, bssid, rssi)) return;   // still not there: try again later
 
 	wlog("WiFi on channel " + String(WiFi.channel()) + ", " + cfg.ssid + " found again on locked channel " +
-	     String(cfg.channel) + " (" + String(rssi) + " dBm) - moving back");
+	     String(lockCh) + " (" + String(rssi) + " dBm) - moving back");
 	WiFi.disconnect();
 	delay(200);
 	if (Connect(cfg, 15000)) {
@@ -588,7 +636,7 @@ static void CheckLockedChannel() {
 		WifiCfg any = cfg;   // keep web / OTA reachable
 		any.channel = 0;
 		Connect(any, 15000);
-		wlog("WiFi could not join channel " + String(cfg.channel) + " - on channel " + String(WiFi.channel()) + " again");
+		wlog("WiFi could not join channel " + String(lockCh) + " - on channel " + String(WiFi.channel()) + " again");
 	}
 }
 
@@ -636,7 +684,8 @@ static String ScanJson(bool start) {
 	String j = "{\"busy\":";
 	j += scanBusy ? "true" : "false";
 	j += ",\"age\":" + String(scanAtMs ? (long)((millis() - scanAtMs) / 1000) : -1L);
-	j += ",\"role\":\"" + role + "\",\"ssid\":\"" + cfg.ssid + "\",\"lock\":" + String(cfg.channel);
+	j += ",\"role\":\"" + role + "\",\"ssid\":\"" + cfg.ssid + "\",\"lock\":" + String(LockChannel(cfg)) +
+	     ",\"locktxt\":\"" + LockText(cfg) + "\"";
 	j += ",\"ch\":" + String(WiFi.channel()) + ",\"aps\":[";
 	for (size_t i = 0; i < scanSeen.size(); i++) {
 		const ScanSeen &s = scanSeen[i];
@@ -671,7 +720,7 @@ ESP-NOW only works between boards on the <b>same channel</b>.</p>
 function q(r){return r>=-55?['g','excellent']:r>=-67?['g','good']:r>=-75?['o','weak']:['r','poor'];}
 function show(s){
   document.getElementById('info').innerHTML='Board: <b>'+s.role+'</b>, WiFi <b>'+s.ssid+'</b>, now on channel <b>'+s.ch+
-    '</b>, channel lock: <b>'+(s.lock?s.lock:'any')+'</b>'+(s.busy?' &mdash; scanning…':(s.age>=0?' &mdash; scanned '+s.age+' s ago':''));
+    '</b>, channel lock: <b>'+s.locktxt+'</b>'+(s.busy?' &mdash; scanning…':(s.age>=0?' &mdash; scanned '+s.age+' s ago':''));
   if(s.busy&&!s.aps.length)return;
   document.getElementById('list').innerHTML=s.aps.length?s.aps.map(a=>{const k=q(a.rssi),w=Math.max(4,Math.min(100,(a.rssi+95)*2));
     return '<tr><td>'+(a.conn?'<b class="c">'+a.name+' &#10004; connected</b>':a.name)+'</td><td>'+a.ch+(a.ch==s.lock?' (lock)':'')+
@@ -695,7 +744,7 @@ scan();
 static void CheckWifiLost() {
 	static uint32_t downSinceMs = 0;
 	static bool     reconnected = false;
-	if (!cfgValid || WiFi.status() == WL_CONNECTED) {
+	if (!cfgValid || searchMode || WiFi.status() == WL_CONNECTED) {
 		downSinceMs = 0;
 		reconnected = false;
 		return;
@@ -714,6 +763,15 @@ static void CheckWifiLost() {
 		delay(300);
 		ESP.restart();
 	}
+}
+
+bool    WifiFollowRx()              { return cfgValid && cfg.channel == WIFI_CH_FOLLOW_RX; }
+uint8_t WifiFollowChannel()         { return FollowChGet(); }
+void    WifiFollowStore(uint8_t ch) { FollowChSet(ch); }
+
+void WifiSearchMode(bool on) {
+	searchMode = on;
+	WiFi.setAutoReconnect(!on);   // auto-reconnect would pull the radio back to the AP's channel
 }
 
 void WifiSetupLoop() {

@@ -48,10 +48,9 @@ password). The red and green LEDs blink alternately.
 1. Join that WiFi with a phone. The setup page opens (or go to `http://192.168.4.1`).
 2. Pick your home WiFi, enter its password.
 3. IP address: tick **automatic (DHCP)**, or enter a fixed IP.
-4. **Channel lock** (sender / receiver):
-   - one router / access point: leave **Any channel**
-   - several access points on different channels: set the **same** channel on
-     every board — see *Several access points* below
+4. **Channel lock** — see *WiFi channel* below. In short:
+   - **receiver**: **Any channel** (one router or a mesh system)
+   - **sender**: **Follow receiver** (already selected on a new sender)
 5. **Choose an owner password** (6+ characters) and keep it safe. You need it
    to change the WiFi settings later and for every firmware update.
 6. Save. The board restarts and joins your WiFi.
@@ -60,6 +59,29 @@ The setup WiFi comes back by itself if the board cannot connect 3 times in a
 row (and leaves again after 5 minutes to retry), or when you hold button **0**
 for 5 seconds (WiFi settings deleted). Saving there always needs the owner
 password, so a neighbour joining the setup WiFi cannot change anything.
+
+## WiFi channel
+
+The senders talk to the receiver directly over the air (ESP-NOW), not through
+your router. That only works when they are all on the **same WiFi channel**.
+The **receiver** decides the channel; senders set to **Follow receiver** find
+it by themselves.
+
+| Your WiFi | Receiver: Channel lock | Senders: Channel lock |
+|---|---|---|
+| One router | Any channel | Follow receiver |
+| Mesh system (TP-Link Deco, Google / Nest WiFi, Eero …) | Any channel | Follow receiver |
+| Several separate access points on different channels | Any channel, or a fixed channel (see *Several access points*) | Follow receiver |
+
+**How "Follow receiver" works:** the sender remembers the channel on which it
+hears the receiver, also after a restart. If it hears nothing from the
+receiver for 5 minutes (for example because the router changed channel), it
+leaves the WiFi for about 30 seconds, listens on channels 1 to 13 for the
+receiver, and restarts on the channel where it found it. If the receiver is
+not found (switched off?), it waits longer before the next try — 10, 20, 40,
+up to 80 minutes — and goes back to its normal WiFi meanwhile.
+
+The All-in-One has no channel setting: it does not use ESP-NOW.
 
 ## Using it
 
@@ -101,16 +123,38 @@ the first setup again.
 
 ## Several access points
 
-ESP-NOW only works between boards on the **same WiFi channel**. With several
-access points on different channels:
+With several access points on different channels, each board joins the one it
+hears best — possibly on different channels. "Follow receiver" keeps the
+senders with the receiver, but each sender also needs an access point **on
+the receiver's channel** for its own WiFi (web page, updates). So choose the
+receiver's channel with care:
 
-1. Fix the 2.4 GHz channel of the access points you want to use (not *Auto*).
-2. On each board, open `/wifiscan` and pick a channel every board hears well
-   (better than about -70 dBm).
-3. Set that **Channel lock** on every board's WIFI page.
+1. Fix the 2.4 GHz channel of your access points (not *Auto*), so it does not
+   change by itself.
+2. Open `/wifiscan` on every board (WIFI page → *Which access points does this
+   board hear?*) and pick the channel that **every** board hears well (better
+   than about -70 dBm). Several access points on that one channel are fine.
+3. Receiver: set **Channel lock** to that channel. Senders: **Follow receiver**
+   (or the same channel number).
 4. If your WiFi system can lock clients to access points (e.g. TP-Link Omada
    "Lock to wireless device"), allow only the access points on that channel —
    **after** step 3, otherwise the boards lose WiFi until they restart.
+
+## Troubleshooting
+
+- **A sender shows *offline* on the receiver's status page**, although it is
+  powered and its own web page opens: it is on a different WiFi channel than
+  the receiver. With *Follow receiver* it searches by itself within 5 minutes
+  (its log says "searching channels 1-13" and "Receiver found on channel …").
+  With a fixed channel: check the Channel lock of both boards, and `/wifiscan`.
+- **A sender's web page does not open after it followed the receiver:** there
+  is no access point on the receiver's channel that this sender can hear — see
+  *Several access points*.
+- **The red and green LEDs blink alternately:** the board is in its setup WiFi
+  (it could not join your WiFi 3 times). It retries your WiFi after 5 minutes;
+  to change the settings, join `IR-FORWARD-…` with a phone.
+- **"Authentication Failed" on a network upload:** `IR_OTA_PASS` is not set,
+  or not to this board's owner password. Open a new terminal after `setx`.
 
 ## Optional: `src/Private.h`
 
