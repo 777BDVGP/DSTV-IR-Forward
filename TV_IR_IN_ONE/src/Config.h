@@ -7,7 +7,7 @@
 #include <Arduino.h>
 
 #define DEVICE_NAME     "TV-IR-IN-ONE"   // default System Name (Settings page changes it)
-#define FW_VERSION      "1.2.8"          // TV_IR_IN_ONE has its own version line
+#define FW_VERSION      "1.2.9"          // TV_IR_IN_ONE has its own version line
 
 // ── WiFi + passwords ──────────────────────────────────────────────────────────
 // Networks, passwords, static IPs and host name are in /WifiSettings.json on

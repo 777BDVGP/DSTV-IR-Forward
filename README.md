@@ -53,6 +53,10 @@ such as JLCPCB or PCBWay: 2 layers, 1.6 mm, default settings. The same PCB is
 used for the sender, the receiver and the All-in-One. The Eagle schematic and
 board are in `PCB/` (also as `SCHEMATIC.jpg` and `PCB.jpg`).
 
+The finished PCB (S2 Mini not plugged in):
+
+![Built IR_FORWARD_V1 PCB](PCB/PCB_built.jpg)
+
 ### 2. Parts on the PCB
 
 | Qty | Part | Value / type | Silkscreen |
@@ -88,10 +92,12 @@ all out:
 | 5 | Resistor SMD 1206 | 10 kΩ | R10–R14 |
 | 1 | Pin header 2-pin + jumper | jumper fitted (off = test "blown") | FUSE_LINK |
 
-Without them, the board's status page shows the surge protection as
-**BLOWN** and the buzzer beeps every 2 seconds. Mute it once on the web page
-(sender: *Settings*, receiver / All-in-One: *MOV* card) — the mute is
-remembered — or leave the buzzer out as well.
+Left them out? Untick **Surge protection parts fitted (TMOV, 4N35)** on the
+board's *Settings* page once after the first setup. The status then shows
+*not fitted* and the buzzer stays quiet. Until you do, the board reports the
+surge protection as **BLOWN** and the buzzer beeps every 2 seconds. With the
+parts fitted, the board checks them all the time: a blown TMOV gives that
+alarm, which you can mute until the TMOV is replaced.
 
 ### 3. Parts on cables (off the PCB)
 

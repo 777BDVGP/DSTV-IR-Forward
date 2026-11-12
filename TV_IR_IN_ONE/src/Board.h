@@ -51,7 +51,8 @@
 #define BRD_BUZZ_PERIOD_MS   2000   // ... repeated every 2 s
 #define BRD_INPUT_DEBOUNCE_MS  50
 
-enum BoardMovState : uint8_t { MOV_UNKNOWN = 0, MOV_OK, MOV_BLOWN };
+enum BoardMovState : uint8_t { MOV_UNKNOWN = 0, MOV_OK, MOV_BLOWN,
+                               MOV_NONE };   // surge parts not fitted (setting): no check, no alarm
 
 // Configures all PCB pins and starts the board task (10 ms). Call first in setup().
 void BoardSetup(uint32_t heartbeatPeriodMs);
@@ -63,7 +64,9 @@ BoardMovState BoardMovGetState();
 bool          BoardMovMuted();              // buzzer muted by the web page
 void          BoardMovSetMuted(bool muted); // web page checkbox (stored in NVS)
 bool          BoardBuzzerOn();              // alarm currently sounding (not muted)
+bool          BoardMovFitted();             // surge protection parts fitted (TMOV, 4N35 ...)
+void          BoardMovSetFitted(bool fitted); // web page setting (stored in NVS)
 
 bool          BoardInputActive();           // INPUT header shorted (debounced)
 
-const char   *BoardMovText();               // "OK" / "BLOWN" / "BLOWN - buzzer muted" / "checking..."
+const char   *BoardMovText();               // "OK" / "BLOWN" / "BLOWN - buzzer muted" / "checking..." / "not fitted"

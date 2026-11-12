@@ -42,6 +42,8 @@ public:
 	// at boot, before the file system) and copied to AllParams.json "MovBuzzerMute";
 	// MaintainBoard() keeps the file in step and clears it when the TMOV is replaced.
 	inline bool MovMuteChk = false;
+	// Settings checkbox "Surge protection parts fitted" — NVS in Board.cpp only.
+	inline bool MovFittedChk = true;
 
 // ─── Settings Page Row Index Constants ───────────────────────────────────────
 	#define SET_SYSNAME           0   // System name text input
@@ -51,13 +53,14 @@ public:
 	#define SET_RECORD_DSTV       4   // Record a DSTV Code checkbox (captures next XMP frame's address)
 	#define SET_DSTV_ADDR         5   // DSTV XMP address string
 	#define SET_MOV_MUTE          6   // Mute buzzer while the TMOV is blown (until replaced)
+	#define SET_MOV_FITTED        7   // Surge protection parts fitted (off = no check, no buzzer)
 
-	#define PAGE_VAR_SETTINGS_BASE  7  // Rows rendered by the generic per-row loop
+	#define PAGE_VAR_SETTINGS_BASE  8  // Rows rendered by the generic per-row loop
 
-	#define SET_REBOOT_EN         7   // Scheduled Reboot — enable checkbox
-	#define SET_REBOOT_TIME       8   // Scheduled Reboot — HH:MM
+	#define SET_REBOOT_EN         8   // Scheduled Reboot — enable checkbox
+	#define SET_REBOOT_TIME       9   // Scheduled Reboot — HH:MM
 
-	#define PAGE_VAR_SETTINGS     9   // Total number of settings page PageVar entries
+	#define PAGE_VAR_SETTINGS    10   // Total number of settings page PageVar entries
 
 // =============================================================================
 // Static Page Build Buffer  (WT_* table content only)

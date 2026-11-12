@@ -13,6 +13,7 @@ void appendSettingsPageSel(int Index);
 
 void CreateAllParams(){
 	MovMuteChk = BoardMovMuted();      // NVS copy; AllParams.json wins if it has the key
+	MovFittedChk = BoardMovFitted();
 	Params = new AllParams;
 	Params->ReadData();
 	BoardMovSetMuted(MovMuteChk);
@@ -116,6 +117,9 @@ void MapSettingsPage(){
 			case SET_MOV_MUTE:
 				SettingsList[i].Var = new PageElement(&MovMuteChk, F("Mute buzzer - MOV blown (until replaced)"), "", &SetStyle, i+ID_SETTINGS);
 				break;
+			case SET_MOV_FITTED:
+				SettingsList[i].Var = new PageElement(&MovFittedChk, F("Surge protection parts fitted (TMOV, 4N35)"), "", &SetStyle, i+ID_SETTINGS);
+				break;
 			case SET_REBOOT_EN:
 				SettingsList[i].Var = new PageElement(&Params->RebootEnable, F("Enable Scheduled Reboot"), "", &SetStyle, i+ID_SETTINGS);
 				break;
@@ -204,6 +208,11 @@ void UpdateSettingsPageValues(uint32_t clientId, JsonObject *root){
 	Params->WriteData();
 	EspNowSetRoomName(Params->SysName);   // RX shows the new room name at once
 	BoardMovSetMuted(MovMuteChk);   // Board.cpp ignores/clears it while the TMOV is OK
+	if (MovFittedChk != BoardMovFitted()) {
+		BoardMovSetFitted(MovFittedChk);
+		SaveGenReport(MovFittedChk ? F("Surge protection set to FITTED - checking again")
+		                           : F("Surge protection set to NOT FITTED - no check, no buzzer"));
+	}
 }
 
 // =============================================================================

@@ -7,7 +7,7 @@
 #include <Arduino.h>
 
 #define DEVICE_NAME     "TV-IR-RX"
-#define FW_VERSION      "1.7.0"   // system version — keep equal to TX 01_Main.h
+#define FW_VERSION      "1.7.1"   // system version — keep equal to TX 01_Main.h
 
 // ── WiFi ──────────────────────────────────────────────────────────────────────
 // SSID, password, channel lock, static IP / DHCP and host name are in

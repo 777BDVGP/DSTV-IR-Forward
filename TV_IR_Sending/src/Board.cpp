@@ -18,6 +18,7 @@ static volatile uint32_t greenUntilMs = 0;
 static volatile uint32_t movLastPulseMs = 0;   // set by the GPIO 36 ISR
 static volatile BoardMovState movState  = MOV_UNKNOWN;
 static volatile bool     movMuted       = false;
+static volatile bool     movFitted      = true;  // false = surge parts left out (NVS)
 static uint32_t          movPulsingSinceMs = 0; // 0 = no continuous pulses
 static uint32_t          bootMs            = 0;
 
@@ -45,6 +46,24 @@ static bool LoadMuted() {
 	return muted;
 }
 
+static void SaveFitted(bool fitted) {
+	Preferences prefs;
+	if (prefs.begin("board", false)) {
+		prefs.putBool("movFit", fitted);
+		prefs.end();
+	}
+}
+
+static bool LoadFitted() {
+	Preferences prefs;
+	bool fitted = true;
+	if (prefs.begin("board", true)) {
+		fitted = prefs.getBool("movFit", true);
+		prefs.end();
+	}
+	return fitted;
+}
+
 static void IRAM_ATTR MovPulseISR() {
 	movLastPulseMs = millis();
 }
@@ -53,6 +72,11 @@ static void IRAM_ATTR MovPulseISR() {
 // UpdateMov — 50 Hz pulses present → OK, absent → BLOWN
 // -----------------------------------------------------------------------------
 static void UpdateMov(uint32_t now) {
+	if (!movFitted) {               // surge parts left out: nothing to watch
+		movState          = MOV_NONE;
+		movPulsingSinceMs = 0;
+		return;
+	}
 	// Signed age: the ISR can stamp a pulse just after 'now' was read, making
 	// it 1 ms "in the future". Unsigned, that wrapped to ~4e9 → instant false
 	// BLOWN. Negative age = pulse just seen. BLOWN needs 5 s with no pulse.
@@ -127,6 +151,7 @@ void BoardSetup(uint32_t heartbeatPeriodMs) {
 	pinMode(BRD_PIN_MOV_SENSE, INPUT_PULLUP);   // 4N35 open collector
 
 	movMuted       = LoadMuted();
+	movFitted      = LoadFitted();
 	bootMs         = millis();
 	movLastPulseMs = bootMs - BRD_MOV_BLOWN_MS; // no pulse seen yet
 	attachInterrupt(digitalPinToInterrupt(BRD_PIN_MOV_SENSE), MovPulseISR, FALLING);
@@ -142,6 +167,19 @@ bool          BoardMovMuted()    { return movMuted; }
 bool          BoardBuzzerOn()    { return movState == MOV_BLOWN && !movMuted; }
 bool          BoardInputActive() { return inputActive; }
 
+bool BoardMovFitted() { return movFitted; }
+
+void BoardMovSetFitted(bool fitted) {
+	if (fitted == movFitted) return;
+	if (fitted) {                  // check again from scratch: 5 s grace, no false alarm
+		movLastPulseMs = millis() - BRD_MOV_BLOWN_MS;
+		bootMs         = millis();
+		movState       = MOV_UNKNOWN;
+	}
+	movFitted = fitted;
+	SaveFitted(fitted);
+}
+
 void BoardMovSetMuted(bool muted) {
 	if (muted == movMuted) return;
 	movMuted = muted;
@@ -152,6 +190,7 @@ const char *BoardMovText() {
 	switch (movState) {
 		case MOV_OK:    return "OK";
 		case MOV_BLOWN: return movMuted ? "BLOWN - buzzer muted" : "BLOWN";
+		case MOV_NONE:  return "not fitted";
 		default:        return "checking...";
 	}
 }

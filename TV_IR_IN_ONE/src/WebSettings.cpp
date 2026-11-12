@@ -1,8 +1,8 @@
 // =============================================================================
 // WebSettings.cpp — /settings page: System Name, DSTV forwarding, MOV mute
 // =============================================================================
-//   GET  /api/settings   {"sysName":"...","fwd":true,"echo":false,"movMute":false,"mov":2}
-//   POST /api/settings   sysName (1-18 chars), fwd, echo, movMute (1/0)
+//   GET  /api/settings   {"sysName":"...","fwd":true,"echo":false,"movMute":false,"movFit":true,"mov":2}
+//   POST /api/settings   sysName (1-18 chars), fwd, echo, movMute, movFit (1/0)
 // Saved to /AllParams.json (LittleFS, same file name as TX / RX; visible on /files).
 //   fwd   DSTV forwarding on/off — as the TV_IR_Sending Disable / Enable System
 //   echo  Echo guard: ignore DSTV frames received while / just after the own IR
@@ -94,6 +94,7 @@ static const char SETTINGS_HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
 <tr><td>System Name (max 18 chars)</td><td><input id="sysName" maxlength="18"></td></tr>
 <tr><td>Forward DSTV codes to the IR LED</td><td><input type="checkbox" id="fwd"></td></tr>
 <tr><td>Echo guard (only if the TSOP can see the IR LED)</td><td><input type="checkbox" id="echo"></td></tr>
+<tr><td>Surge protection parts fitted (TMOV, 4N35)</td><td><input type="checkbox" id="movFit"></td></tr>
 <tr><td>Mute buzzer - MOV blown (until replaced)</td><td><input type="checkbox" id="movMute"></td></tr>
 </table>
 <div class="row"><button onclick="save()">UPDATE</button></div>
@@ -103,11 +104,11 @@ the IR LED is in the room next door: it would also drop the repeats of a held bu
 <script>
 function $(id){return document.getElementById(id);}
 function load(){fetch('/api/settings').then(r=>r.json()).then(s=>{$('sysName').value=s.sysName;
-$('fwd').checked=s.fwd;$('echo').checked=s.echo;$('movMute').checked=s.movMute;});}
+$('fwd').checked=s.fwd;$('echo').checked=s.echo;$('movMute').checked=s.movMute;$('movFit').checked=s.movFit;});}
 load();
 function save(){
   fetch('/api/settings',{method:'POST',body:new URLSearchParams({sysName:$('sysName').value,
-    fwd:$('fwd').checked?1:0,echo:$('echo').checked?1:0,movMute:$('movMute').checked?1:0})})
+    fwd:$('fwd').checked?1:0,echo:$('echo').checked?1:0,movMute:$('movMute').checked?1:0,movFit:$('movFit').checked?1:0})})
    .then(r=>r.text().then(t=>{hdrMsg(t,'red');load();}))
    .catch(()=>hdrMsg('Connection lost','red'));
 }
@@ -123,6 +124,7 @@ void AddSettingsRoutes(AsyncWebServer &server) {
                   "\",\"fwd\":" + (fwdEnabled ? "true" : "false") +
                   ",\"echo\":" + (echoGuard ? "true" : "false") +
                   ",\"movMute\":" + (BoardMovMuted() ? "true" : "false") +
+                  ",\"movFit\":" + (BoardMovFitted() ? "true" : "false") +
                   ",\"mov\":" + String((int)BoardMovGetState()) + "}");
     });
 
@@ -161,6 +163,12 @@ void AddSettingsRoutes(AsyncWebServer &server) {
             changed = true;
         }
         if (changed) SaveParams();
+        bool fit = ArgStr(req, "movFit") == "1";
+        if (req->hasArg("movFit") && fit != BoardMovFitted()) {
+            BoardMovSetFitted(fit);
+            StatusLog(fit ? "Surge protection set to FITTED - checking again (Settings)"
+                          : "Surge protection set to NOT FITTED - no check, no buzzer (Settings)");
+        }
         String msg = "Parameters Updated!";
         if (mute && BoardMovGetState() == MOV_OK) msg += " (MOV is OK - mute not needed, cleared)";
         req->send(200, "text/plain", msg);

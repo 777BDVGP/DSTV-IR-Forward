@@ -207,6 +207,6 @@ void MaintainHomePage(){
 	HomeRouterStyle = RouterReachable() ? "" : ATT_RED;
 
 	BoardMovState mov = BoardMovGetState();
-	HomeMovStyle = mov == MOV_OK ? ATT_GREEN : mov == MOV_BLOWN ? ATT_RED : ATT_ORANGE;
+	HomeMovStyle = mov == MOV_OK ? ATT_GREEN : mov == MOV_BLOWN ? ATT_RED : mov == MOV_NONE ? ATT_WHITE : ATT_ORANGE;
 	HomeMov      = BoardMovText();
 }

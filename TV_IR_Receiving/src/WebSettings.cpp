@@ -1,7 +1,7 @@
 // =============================================================================
 // WebSettings.cpp — /settings page: RX System Name (shown in every page header)
 // =============================================================================
-//   GET  /api/settings            {"sysName":"...","movMute":false,"mov":2}
+//   GET  /api/settings            {"sysName":"...","movMute":false,"movFit":true,"mov":2}
 //   POST /api/settings  sysName   save (1-18 chars) to /AllParams.json (LittleFS,
 //                                 same file name as the TX; visible on /files)
 // WiFi / OTA host name comes from /WifiSettings.json (hostnames cannot contain spaces).
@@ -93,15 +93,16 @@ static const char SETTINGS_HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
 <table class="kv">
 <tr class="hd"><td>Parameter Description</td><td>Value</td></tr>
 <tr><td>System Name (max 18 chars)</td><td><input id="sysName" maxlength="18"></td></tr>
+<tr><td>Surge protection parts fitted (TMOV, 4N35)</td><td><input type="checkbox" id="movFit"></td></tr>
 <tr><td>Mute buzzer - MOV blown (until replaced)</td><td><input type="checkbox" id="movMute"></td></tr>
 </table>
 <div class="row"><button onclick="save()">UPDATE</button></div>
 
 <script>
 function $(id){return document.getElementById(id);}
-fetch('/api/settings').then(r=>r.json()).then(s=>{$('sysName').value=s.sysName;$('movMute').checked=s.movMute;});
+fetch('/api/settings').then(r=>r.json()).then(s=>{$('sysName').value=s.sysName;$('movMute').checked=s.movMute;$('movFit').checked=s.movFit;});
 function save(){
-  fetch('/api/settings',{method:'POST',body:new URLSearchParams({sysName:$('sysName').value,movMute:$('movMute').checked?1:0})})
+  fetch('/api/settings',{method:'POST',body:new URLSearchParams({sysName:$('sysName').value,movMute:$('movMute').checked?1:0,movFit:$('movFit').checked?1:0})})
    .then(r=>r.text().then(t=>{hdrMsg(t,'red');
      fetch('/api/settings').then(r=>r.json()).then(s=>{$('movMute').checked=s.movMute;});}))
    .catch(()=>hdrMsg('Connection lost','red'));
@@ -115,7 +116,8 @@ void AddSettingsRoutes(AsyncWebServer &server) {
 
     server.on("/api/settings", HTTP_GET, [](AsyncWebServerRequest *req) {
         req->send(200, "application/json", "{\"sysName\":\"" + JsonEscape(RxSysName()) + "\",\"movMute\":" +
-                  (BoardMovMuted() ? "true" : "false") + ",\"mov\":" + String((int)BoardMovGetState()) + "}");
+                  (BoardMovMuted() ? "true" : "false") + ",\"movFit\":" + (BoardMovFitted() ? "true" : "false") +
+                  ",\"mov\":" + String((int)BoardMovGetState()) + "}");
     });
 
     server.on("/api/settings", HTTP_POST, [](AsyncWebServerRequest *req) {
@@ -135,6 +137,12 @@ void AddSettingsRoutes(AsyncWebServer &server) {
             BoardMovSetMuted(mute);
             RxSaveParams();
             StatusLog(mute ? "MOV buzzer muted (Settings)" : "MOV buzzer un-muted (Settings)");
+        }
+        bool fit = ArgStr(req, "movFit") == "1";
+        if (req->hasArg("movFit") && fit != BoardMovFitted()) {
+            BoardMovSetFitted(fit);
+            StatusLog(fit ? "Surge protection set to FITTED - checking again (Settings)"
+                          : "Surge protection set to NOT FITTED - no check, no buzzer (Settings)");
         }
         String msg = "Parameters Updated!";
         if (mute && BoardMovGetState() == MOV_OK) msg += " (MOV is OK - mute not needed, cleared)";

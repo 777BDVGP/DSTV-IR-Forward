@@ -53,7 +53,7 @@ table.kv td:last-child{text-align:right;white-space:nowrap}
 table.kv tbody tr:last-child td{border-bottom:none}
 table.rooms td{white-space:nowrap}
 .badge{display:inline-block;padding:4px 10px;border-radius:6px;color:#fff}
-.badge.ok{background:green}.badge.bad{background:red}.badge.warn{background:orange;color:#000}
+.badge.ok{background:green}.badge.bad{background:red}.badge.warn{background:orange;color:#000}.badge.off{background:#64748b}
 input[type=checkbox]{accent-color:#0284c7;width:16px;height:16px;cursor:pointer}
 @media(max-width:600px){body{padding:10px}}
 )CSS";
@@ -138,7 +138,7 @@ r.ago+' s ago</td><td>'+r.frames+'</td><td>'+(r.rssi?r.rssi+' dBm':'-')+'</td><t
 if(rows)document.getElementById('rooms').innerHTML=rows;
 document.getElementById('log').textContent=s.log.join('\n');
 const mv=document.getElementById('mov');mv.textContent=s.movText;
-mv.className='badge '+(s.mov==1?'ok':s.mov==2?'bad':'warn');
+mv.className='badge '+(s.mov==1?'ok':s.mov==2?'bad':s.mov==3?'off':'warn');
 }).catch(()=>{});}
 load();setInterval(load,2000);
 </script></body></html>)HTML";
