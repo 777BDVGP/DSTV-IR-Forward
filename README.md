@@ -65,7 +65,6 @@ The finished PCB (S2 Mini not plugged in):
 | 1 | AC/DC power module | **MORNSUN LD05-23B05R2-M** (230 V → 5 V) | MORNSUN |
 | 1 | Voltage regulator | **AMS1117-3.3**, SOT-223 | 3.3VOLT |
 | 2 | NPN transistor | **2N2222**, TO-92 | 2N2222 |
-| 1 | Buzzer | **active** buzzer, **5 V**, 12 mm | BUZZER |
 | 3 | Electrolytic capacitor | 220 µF, 16 V | C2, C3, C6 |
 | 2 | Capacitor | 0.1 µF | C1, C5 |
 | 4 | Resistor, through-hole | **130 Ω**, ¼ W (one per IR LED output) | U$2, U$3, U$5, U$7 |
@@ -81,7 +80,8 @@ All headers are plain 2.54 mm (0.1", DuPont) — the cables use DuPont plugs.
 
 **Surge protection (optional):** these parts only protect the board against
 mains surges and let the firmware watch that protection. You can leave them
-all out:
+all out — the buzzer too, because it is only used to tell you that the
+surge protection (TMOV) has blown:
 
 | Qty | Part | Value / type | Silkscreen |
 |---|---|---|---|
@@ -91,13 +91,16 @@ all out:
 | 1 | LED SMD 0805 | | LED1 |
 | 5 | Resistor SMD 1206 | 10 kΩ | R10–R14 |
 | 1 | Pin header 2-pin + jumper | jumper fitted (off = test "blown") | FUSE_LINK |
+| 1 | Buzzer | **active** buzzer, **5 V**, 12 mm — only sounds when the TMOV has blown | BUZZER |
 
 Left them out? Untick **Surge protection parts fitted (TMOV, 4N35)** on the
 board's *Settings* page once after the first setup. The status then shows
 *not fitted* and the buzzer stays quiet. Until you do, the board reports the
 surge protection as **BLOWN** and the buzzer beeps every 2 seconds. With the
 parts fitted, the board checks them all the time: a blown TMOV gives that
-alarm, which you can mute until the TMOV is replaced.
+alarm (status **BLOWN**, buzzer beeps). Meanwhile you can switch the buzzer
+off with the tick box **Mute buzzer - MOV blown** on the *Settings* page
+until the TMOV is replaced.
 
 ### 3. Parts on cables (off the PCB)
 
