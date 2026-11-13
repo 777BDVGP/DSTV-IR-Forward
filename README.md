@@ -63,6 +63,12 @@ The finished PCB (S2 Mini not plugged in):
 
 ![Built IR_FORWARD_V1 PCB](PCB/PCB_BUILT.jpg)
 
+The **WEMOS LOLIN S2 Mini** (ESP32-S2) that plugs onto it — purple, with a
+USB-C plug and the two buttons **0** (left) and **RST** (right) that you need
+to put the firmware on it (step 6):
+
+![WEMOS LOLIN S2 Mini (ESP32-S2), buttons 0 and RST next to the USB-C plug](PCB/WEMOS_MINI_ESP32-S2.jpg)
+
 ### 2. Parts on the PCB
 
 | Qty | Part | Value / type | Silkscreen |
@@ -191,6 +197,8 @@ wants to change the code.
 
 Both need a **USB-C data cable** (some cables only charge). Flash the S2 Mini
 **off the PCB**, or with the mains disconnected — it gets its power from USB.
+The buttons **0** and **RST** are at the top, left and right of the USB-C plug
+(see the S2 Mini photo in step 1).
 
 #### A. In the browser — the normal way (no software to install)
 
