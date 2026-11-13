@@ -46,9 +46,9 @@ All three run on the same PCB (`PCB/IR_FORWARD_V1`), with a WEMOS LOLIN S2 Mini
 (ESP32-S2). Printable enclosure parts (.stl: case, lid, IR clip, LED holders)
 are in `Enclosure/`; the PCB (schematic, board, Gerber zip) is in `PCB/`.
 
-**Firmware on a new board in 2 minutes, from the browser:**
-https://777bdvgp.github.io/DSTV-IR-Forward/ (Chrome or Edge) — see step 6
-below.
+**Firmware on a new board in 2 minutes, from the browser** — the normal way,
+no software to install: https://777bdvgp.github.io/DSTV-IR-Forward/ (Chrome or
+Edge) — see step 6 below.
 
 ## Building one, step by step
 
@@ -179,7 +179,9 @@ wiring checked by a qualified person.
 
 ### 6. Put the firmware on the S2 Mini
 
-Two ways — pick one:
+**The normal way is A, the Install page in the browser** — nothing to
+install, and it takes about 2 minutes. Use B only if you are a developer who
+wants to change the code.
 
 | | **A. In the browser** | **B. With PlatformIO** |
 |---|---|---|
@@ -190,7 +192,7 @@ Two ways — pick one:
 Both need a **USB-C data cable** (some cables only charge). Flash the S2 Mini
 **off the PCB**, or with the mains disconnected — it gets its power from USB.
 
-#### A. In the browser (no software to install)
+#### A. In the browser — the normal way (no software to install)
 
 1. Open the **Install page** of this project in **Chrome** or **Edge**
    — **https://777bdvgp.github.io/DSTV-IR-Forward/** (the page is `docs/index.html`).
@@ -207,7 +209,7 @@ Without the Install page: download `sender.bin`, `receiver.bin` or
 [Espressif web flasher](https://espressif.github.io/esptool-js/) — *Connect*,
 **Flash Address `0x0`**, choose the file, *Program*.
 
-#### B. With PlatformIO (developers)
+#### B. With PlatformIO (only for developers)
 
 1. Install [Visual Studio Code](https://code.visualstudio.com), then in VS
    Code *Extensions* → **PlatformIO IDE**.
