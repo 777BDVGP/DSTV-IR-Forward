@@ -273,8 +273,31 @@ Open the board's IP (or `http://<host name>.local`) in a browser.
 - **Receiver**: status of all senders, **IR SEQUENCES** (run, edit, add known
   codes such as Samsung TV Power ON/OFF) and **SCHEDULE** (run sequences at set
   times; per line: on/off, × repeats, every … ms, pause after).
-- **WIFI** page on every board, and `/wifiscan`: which access points the
-  board hears, on which channel and how strong.
+- **All-in-One**: status, **IR SEQUENCES** with the schedule (as on the
+  receiver; record by pointing a remote at this board) and **SETTINGS**
+  (forwarding on/off, *Forward remote* / *Learn remote*, *Echo guard*).
+- **WIFI** page on every board. Sender and receiver also have `/wifiscan`:
+  which access points the board hears, on which channel and how strong.
+
+### All-in-One: Echo guard
+
+The All-in-One receives the remote on its IR eye and sends it out again on its
+IR LED. If the eye can **see its own IR LED** (same room, or a reflection off
+a wall or window), it picks up its own signal and sends it again — the decoder
+gets every button two or more times. The **Echo guard** (Settings) stops that:
+it ignores everything the eye receives while the LED sends and for 150 ms
+after.
+
+| Where is the IR LED? | Echo guard |
+|---|---|
+| In another room, or the eye cannot see it | **off** (default) |
+| The eye can see the LED | **on** |
+
+Leave it off when you can: held buttons (volume, scrolling channels) send a
+repeat every ~80 ms, and with the guard on those repeats are thrown away.
+
+Test: press one DStv button once and watch the green LED — **one** flash is
+right; several flashes for one press means an echo → switch the guard on.
 
 ## Another TV box (not DStv)
 
