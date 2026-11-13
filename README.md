@@ -252,6 +252,18 @@ row (and leaves again after 5 minutes to retry), or when you hold button **0**
 for 5 seconds (WiFi settings deleted). Saving there always needs the owner
 password, so a neighbour joining the setup WiFi cannot change anything.
 
+### How to open the board's page
+
+| Address | When |
+|---|---|
+| `http://192.168.4.1` | **Only during setup**: your phone must be connected to the board's own setup WiFi `IR-FORWARD-…`. It stops working once the board has joined your home WiFi. |
+| `http://192.168.1.xxx` (the board's IP) | **Normal use**, on your home WiFi. Works on every phone and PC. Find the IP in your router's list of connected devices. |
+| `http://<host name>.local` | **Normal use** too, e.g. `http://ir-tx-9e80.local`. The host name is `ir-` + `tx` / `rx` / `in1` + the last 4 characters of the setup WiFi name (you can change it on the setup page). Works on PCs and iPhones; many Android phones do not support `.local`, so use the IP there. |
+
+If you only see the setup page at `192.168.4.1` while you expected your home
+WiFi, the board could not join it — usually a typo in the WiFi password. Set
+it up again and watch out for the phone's automatic capital first letter.
+
 ## WiFi channel
 
 The senders talk to the receiver directly over the air (ESP-NOW), not through
