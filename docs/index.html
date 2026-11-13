@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IR Forward Installer</title>
+<script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--fg:#1f2933;--muted:#5f6b7a;--line:#d9dee5;--acc:#0369a1;--warn:#b45309}
+@media (prefers-color-scheme:dark){:root{--bg:#0f172a;--card:#1e293b;--fg:#e2e8f0;--muted:#94a3b8;--line:#334155;--acc:#38bdf8;--warn:#f59e0b}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:760px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:1.6rem;margin:0 0 4px}
+h2{font-size:1.15rem;margin:28px 0 8px}
+p{margin:6px 0}
+.sub{color:var(--muted);margin-bottom:20px}
+.cards{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
+.card h3{margin:0 0 4px;font-size:1.05rem}
+.card p{color:var(--muted);font-size:.92rem;min-height:3em}
+.ver{font-size:.85rem;color:var(--muted)}
+ol{padding-left:22px}li{margin:4px 0}
+.note{border-left:4px solid var(--warn);background:var(--card);padding:10px 14px;border-radius:6px;margin:16px 0}
+.unsupported{display:none;color:var(--warn);font-weight:600}
+esp-web-install-button[install-unsupported] .unsupported{display:block}
+a{color:var(--acc)}
+code{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+</style>
+</head>
+<body>
+<main>
+<h1>IR Forward — install the firmware</h1>
+<p class="sub">Put the firmware on a new WEMOS S2 Mini straight from this page — no software to install.
+Works in <b>Chrome</b> or <b>Edge</b> on a PC or Mac (not Firefox, not Safari, not on a phone).</p>
+
+<h2>1. Get the S2 Mini ready</h2>
+<ol>
+<li>Plug the S2 Mini into the PC with a USB-C <b>data</b> cable (some cables only charge).
+  Do this <b>off the PCB</b>, or with the 230 V disconnected.</li>
+<li>Hold button <b>0</b>, tap <b>RST</b>, let go of <b>0</b>. The S2 Mini is now waiting for new firmware.</li>
+</ol>
+
+<h2>2. Click the board you are building</h2>
+<div class="cards">
+  <div class="card">
+    <h3>Sender</h3>
+    <p>In the room with the remote. IR eye + red / green LEDs.</p>
+    <div class="ver" data-manifest="manifest_sender.json"></div>
+    <esp-web-install-button manifest="manifest_sender.json">
+      <span slot="unsupported" class="unsupported">Use Chrome or Edge on a PC.</span>
+    </esp-web-install-button>
+  </div>
+  <div class="card">
+    <h3>Receiver</h3>
+    <p>At the DSTV decoder. IR LED(s) pointed at the decoder.</p>
+    <div class="ver" data-manifest="manifest_receiver.json"></div>
+    <esp-web-install-button manifest="manifest_receiver.json">
+      <span slot="unsupported" class="unsupported">Use Chrome or Edge on a PC.</span>
+    </esp-web-install-button>
+  </div>
+  <div class="card">
+    <h3>All-in-One</h3>
+    <p>Sender and receiver on one board, when the remote and decoder are close together.</p>
+    <div class="ver" data-manifest="manifest_allinone.json"></div>
+    <esp-web-install-button manifest="manifest_allinone.json">
+      <span slot="unsupported" class="unsupported">Use Chrome or Edge on a PC.</span>
+    </esp-web-install-button>
+  </div>
+</div>
+<p>Pick the port in the pop-up (often <code>ESP32-S2</code> or a COM port), then <b>Install</b>.
+Answer <b>Erase</b> with yes for a new board. It takes about a minute.</p>
+
+<div class="note">The S2 Mini cannot restart itself after flashing over USB. If the page says it
+cannot connect to the device after the install, that is normal — the firmware is written.</div>
+
+<h2>3. Start it</h2>
+<ol>
+<li>Tap <b>RST</b> on the S2 Mini (or unplug and plug in again).</li>
+<li>Its setup WiFi appears: <code>IR-FORWARD-TX-…</code>, <code>IR-FORWARD-RX-…</code> or
+  <code>IR-FORWARD-IN1-…</code>. Join it with a phone and follow <i>First setup</i> in the README.</li>
+</ol>
+
+<h2>Other way: download the file</h2>
+<p>Download the file for your board and flash it with the
+<a href="https://espressif.github.io/esptool-js/">Espressif web flasher</a> at <b>Flash Address 0x0</b>:
+<a href="firmware/sender.bin">sender.bin</a> ·
+<a href="firmware/receiver.bin">receiver.bin</a> ·
+<a href="firmware/allinone.bin">allinone.bin</a></p>
+<p>Later updates go over WiFi — see the README.</p>
+</main>
+<script>
+document.querySelectorAll('[data-manifest]').forEach(el => {
+  fetch(el.dataset.manifest).then(r => r.json())
+    .then(m => { el.textContent = 'Version ' + m.version; })
+    .catch(() => { el.textContent = ''; });
+});
+</script>
+</body>
+</html>

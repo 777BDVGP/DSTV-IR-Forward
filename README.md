@@ -148,31 +148,59 @@ Extra parts in the folder: `Lid`, `Angle`, `RoomLEDSupr`.
 connected to mains, and always fit it in its closed enclosure. Have the mains
 wiring checked by a qualified person.
 
-### 6. Software on your PC (once)
+### 6. Put the firmware on the S2 Mini
 
-You need a PC (Windows, macOS or Linux) and a **USB-C data cable** — some
-cables only charge.
+Two ways — pick one:
 
-1. Install [Visual Studio Code](https://code.visualstudio.com).
-2. In VS Code, open *Extensions* and install **PlatformIO IDE**.
-3. Download this project (*Code → Download ZIP*, or `git clone`) and unzip it.
-4. In VS Code: *File → Open Folder* → the folder of the firmware you want,
-   e.g. `TV_IR_Receiving` (open that folder itself, not the top folder).
-5. The first build downloads the ESP32 tools and libraries by itself
-   (a few minutes, needs internet). Build with the ✓ button in the bottom bar,
-   or `pio run` in the PlatformIO terminal.
+| | **A. In the browser** | **B. With PlatformIO** |
+|---|---|---|
+| For | everyone who just wants it running | developers who want to change the code |
+| You need | Chrome or Edge on a PC / Mac | VS Code + PlatformIO, about 1 GB of tools |
+| Time | about 2 minutes | about 20 minutes the first time |
 
-## Build and first flash
+Both need a **USB-C data cable** (some cables only charge). Flash the S2 Mini
+**off the PCB**, or with the 230 V disconnected — it gets its power from USB.
 
-1. Software installed as in step 6 above.
-2. Open the project folder of the firmware you want (e.g. `TV_IR_Receiving`).
-3. Connect the S2 Mini by USB, hold button **0**, tap **RST** (download mode).
-4. Flash over USB:
+#### A. In the browser (no software to install)
+
+1. Open the **Install page** of this project in **Chrome** or **Edge**
+   (`docs/index.html`, online at **INSTALL-PAGE-LINK** once published).
+2. Plug in the S2 Mini. Hold button **0**, tap **RST**, let go of **0**.
+3. Click **Sender**, **Receiver** or **All-in-One**, pick the port in the
+   pop-up (often `ESP32-S2`), then **Install**. Answer **Erase** with yes for a
+   new board. It takes about a minute.
+4. Tap **RST**. The board starts its setup WiFi — go on with *First setup*.
+   (If the page says it cannot connect after the install: normal — the S2
+   Mini cannot restart itself over USB; the firmware is written.)
+
+Without the Install page: download `sender.bin`, `receiver.bin` or
+`allinone.bin` from `docs/firmware/` and flash it with the
+[Espressif web flasher](https://espressif.github.io/esptool-js/) — *Connect*,
+**Flash Address `0x0`**, choose the file, *Program*.
+
+#### B. With PlatformIO (developers)
+
+1. Install [Visual Studio Code](https://code.visualstudio.com), then in VS
+   Code *Extensions* → **PlatformIO IDE**.
+2. Download this project (*Code → Download ZIP*, or `git clone`) and unzip it.
+3. *File → Open Folder* → the folder of the firmware you want, e.g.
+   `TV_IR_Receiving` (that folder itself, not the top folder). The first build
+   downloads the ESP32 tools and libraries by itself (a few minutes).
+4. Plug in the S2 Mini, hold button **0**, tap **RST** (download mode).
+5. Flash over USB:
    - Sender: `pio run -e usb -t upload`
    - Receiver: `pio run -e rx_usb -t upload`
    - All-in-One: `pio run -e usb -t upload`
-5. Press **RST**. (The upload may report "failed" only because the S2 cannot
+6. Press **RST**. (The upload may report "failed" only because the S2 cannot
    be reset over USB — the firmware is written.)
+
+Every build also writes two files to the project's `firmware_out/`:
+`<project>_v<version>.bin` (updates over WiFi) and `<project>_v<version>_full.bin`
+(a whole new board, flashed at address `0x0` — what the Install page uses).
+To refresh the Install page after a new version: build the three projects,
+run `python docs/update_firmware.py`, commit `docs/`. Built with your own
+`src/Private.h`, the file is named `..._full_PRIVATE.bin` and the script
+leaves it out — never share that one.
 
 ## First setup (once per board)
 

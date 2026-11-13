@@ -1,0 +1,16 @@
+{
+  "name": "IR Forward All-in-One",
+  "version": "1.2.9",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S2",
+      "parts": [
+        {
+          "path": "firmware/allinone.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}

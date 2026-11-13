@@ -20,3 +20,6 @@ TV_IR_Receiving/src/Private.h
 
 # Own upload targets (see private.example.ini) - never commit
 **/private.ini
+
+# Built firmware files (tools/export_bin.py)
+**/firmware_out/

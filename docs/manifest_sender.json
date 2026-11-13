@@ -1,0 +1,16 @@
+{
+  "name": "IR Forward Sender",
+  "version": "1.7.1",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S2",
+      "parts": [
+        {
+          "path": "firmware/sender.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}
