@@ -1,5 +1,5 @@
 // =============================================================================
-// 09_IR.cpp — IR Receive, DSTV Detection & Forwarding
+// 09_IR.cpp — IR Receive, Forward-remote filter (DSTV by default) & Forwarding
 // =============================================================================
 
 #include <Arduino.h>
@@ -7,6 +7,7 @@
 #include <IRremoteESP8266.h>
 #include <IRutils.h>
 #include "all_includes.h"
+#include "RemoteFilter.h"
 
 // 1024 durations: room for long TV / sound bar / aircon frames when recording a
 // sequence for the RX (the library default of 100 is enough for DSTV only).
@@ -14,15 +15,45 @@ static IRrecv         irrecv(IPIN_IR_RECEIVE, 1024, kTimeoutMs, false);
 static decode_results results;
 
 // -----------------------------------------------------------------------------
-// RecordDSTVAddress — captures the next XMP frame's value into DSTVAddress
+// Forward remote — which remote goes to the RX (RemoteFilter.h)
 // -----------------------------------------------------------------------------
-static void RecordDSTVAddress(decode_results *r) {
-    if (r->decode_type != XMP) return;
-    char buf[20];
-    snprintf(buf, sizeof(buf), "0x%llX", (unsigned long long)r->value);
-    Params->DSTVAddress = buf;   // RecordDSTVCode stays true until turned off via Settings + Update
+static RemoteFilter fwdFilter;                        // default XMP (DSTV)
+static portMUX_TYPE fwdMux     = portMUX_INITIALIZER_UNLOCKED;
+static uint32_t     fwdMatchMs = 0;                   // last match (NEC repeat frames)
+
+bool IrSetForwardRemote(const String &txt) {
+    RemoteFilter f;
+    if (!RemoteFilterParse(txt, f)) return false;
+    portENTER_CRITICAL(&fwdMux);
+    fwdFilter = f;
+    portEXIT_CRITICAL(&fwdMux);
+    return true;
+}
+
+static RemoteFilter CurrentFilter() {
+    portENTER_CRITICAL(&fwdMux);
+    RemoteFilter f = fwdFilter;
+    portEXIT_CRITICAL(&fwdMux);
+    return f;
+}
+
+String IrForwardRemoteText()  { return RemoteFilterText(CurrentFilter()); }
+String IrForwardRemoteLabel() { return RemoteFilterLabel(CurrentFilter()); }
+
+// -----------------------------------------------------------------------------
+// LearnRemote — Settings "Learn remote": the next button press sets the remote
+// -----------------------------------------------------------------------------
+static void LearnRemote(decode_results *r) {
+    String txt = RemoteFilterLearn(*r);
+    if (txt.isEmpty()) {
+        if (!r->repeat) SaveGenReport("Learn remote: this IR code is not recognised - try another button or remote");
+        return;
+    }
+    IrSetForwardRemote(txt);
+    Params->ForwardRemote = IrForwardRemoteText();
+    Params->LearnRemote   = false;      // done - the Settings page shows it unticked
     Params->WriteData();
-    SaveGenReport("DSTV code recorded: " + String(buf));
+    SaveGenReport("Learn remote: now forwarding " + IrForwardRemoteLabel());
 }
 
 // -----------------------------------------------------------------------------
@@ -101,6 +132,10 @@ void SetupIR() {
     irrecv.setTolerance(25);
     irrecv.setUnknownThreshold(12);   // shorter unknown bursts = noise (as on the RX)
     irrecv.enableIRIn(true);  // keep internal pull-up — TSOP31238 output is open-collector
+    if (!IrSetForwardRemote(Params->ForwardRemote)) {
+        SaveGenReport("Forward remote '" + Params->ForwardRemote + "' not understood - forwarding DSTV (XMP)");
+        IrSetForwardRemote("XMP");
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -111,9 +146,12 @@ void IRLoop() {
     if (!irrecv.decode(&results)) return;
     RecoverXmp(&results);   // UNKNOWN that is really a (stretched) DSTV frame → XMP
 
-    // Only DSTV (XMP) frames go to the TV IR RX. No local IR repeat on
-    // IR OUT — with TSOP and IR LED on one PCB that would feed back.
-    bool isDstv  = results.decode_type == XMP;
+    // Only the "Forward remote" (DSTV by default) goes to the TV IR RX. No
+    // local IR repeat on IR OUT — with TSOP and IR LED on one PCB that would
+    // feed back.
+    RemoteFilter filter = CurrentFilter();
+    bool learning = Params->LearnRemote;
+    bool isOurs   = !learning && RemoteFilterMatch(filter, results, fwdMatchMs);
     if (EspNowRecActive()) {
         // Recording a sequence for the RX (page /recseq): every remote (TV and
         // sound bar too, not only DSTV) is forwarded, so the RX plays it on its
@@ -122,20 +160,20 @@ void IRLoop() {
         if (NORMAL_OPERATION) EspNowForwardIr(&results);
         EspNowRecStroke(&results);
     } else {
-        bool forward = NORMAL_OPERATION && !Params->RecordDSTVCode && isDstv;
+        bool forward = NORMAL_OPERATION && isOurs;
         if (forward) EspNowForwardIr(&results);
     }
 
-    // LEDs show only the code type: DSTV → GREEN (GPIO 5), anything else → RED (GPIO 4)
-    if (isDstv) BoardFlashGreen();
+    // LEDs show only the code type: forward remote → GREEN (GPIO 5), anything else → RED (GPIO 4)
+    if (isOurs) BoardFlashGreen();
     else        BoardFlashRed();
 
     if (Params->LearnMode) {
         AppendIRLog(&results);
     }
 
-    if (Params->RecordDSTVCode) {
-        RecordDSTVAddress(&results);
+    if (learning && !EspNowRecActive()) {
+        LearnRemote(&results);
     }
     irrecv.resume();
 }

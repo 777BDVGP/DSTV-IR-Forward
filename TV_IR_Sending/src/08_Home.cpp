@@ -197,6 +197,8 @@ void MaintainHomePage(){
 		HomeLastCode = buf;
 	} else if (s.lastFormat == FMT_RAW) {
 		HomeLastCode = "RAW " + String(s.lastRawCount) + " durations";
+	} else {
+		HomeLastCode = "none yet - forwarding " + IrForwardRemoteLabel();
 	}
 
 	HomeWifi = "ch " + String(WiFi.channel()) + " / " + String(WiFi.RSSI()) + " dBm";

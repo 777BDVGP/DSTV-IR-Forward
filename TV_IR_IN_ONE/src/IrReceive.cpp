@@ -1,5 +1,5 @@
 // =============================================================================
-// IrReceive.cpp — TSOP31238 receiver: live DSTV forwarding + record mode
+// IrReceive.cpp — TSOP31238 receiver: live forwarding (DSTV or learnt remote) + record mode
 // =============================================================================
 // Forwarding and the LED rules come from TV_IR_Sending (09_IR.cpp, including
 // the tolerant XMP decode RecoverXmp); record mode comes from TV_IR_Receiving
@@ -15,7 +15,8 @@
 #include "IrRecord.h"
 #include "IrTransmit.h"
 #include "Status.h"
-#include "WebUtil.h"      // FwdEnabled(), FwdEchoGuard()
+#include "WebUtil.h"      // FwdEnabled(), FwdEchoGuard(), FwdLearning()
+#include "RemoteFilter.h"
 
 // 50 ms gap ends a capture: XMP frames (80 ms apart) stay separate, while the
 // multi-part frames of aircon remotes (~30 ms gaps) are captured as one stroke.
@@ -35,6 +36,32 @@ static uint32_t  lastActionMs = 0;
 static portMUX_TYPE lastMux = portMUX_INITIALIZER_UNLOCKED;
 static uint64_t     lastDstvValue = 0;
 static bool         haveLastDstv  = false;
+static char         lastOtherText[48] = "";   // last forwarded non-DSTV code
+static bool         lastWasDstv   = true;
+
+// "Forward remote" (Settings) — RemoteFilter.h; default XMP (DSTV)
+static RemoteFilter fwdFilter;
+static portMUX_TYPE fwdMux     = portMUX_INITIALIZER_UNLOCKED;
+static uint32_t     fwdMatchMs = 0;            // last match (NEC repeat frames)
+
+bool IrSetForwardRemote(const String &txt) {
+    RemoteFilter f;
+    if (!RemoteFilterParse(txt, f)) return false;
+    portENTER_CRITICAL(&fwdMux);
+    fwdFilter = f;
+    portEXIT_CRITICAL(&fwdMux);
+    return true;
+}
+
+static RemoteFilter CurrentFilter() {
+    portENTER_CRITICAL(&fwdMux);
+    RemoteFilter f = fwdFilter;
+    portEXIT_CRITICAL(&fwdMux);
+    return f;
+}
+
+String IrForwardRemoteText()  { return RemoteFilterText(CurrentFilter()); }
+String IrForwardRemoteLabel() { return RemoteFilterLabel(CurrentFilter()); }
 
 struct RecLock {
     RecLock()  { xSemaphoreTake(recMtx, portMAX_DELAY); }
@@ -123,7 +150,8 @@ static bool CodeFromResults(const decode_results &r, IrCode &code) {
 // -----------------------------------------------------------------------------
 static void HandleFrame() {
     RecoverXmp(&results);   // UNKNOWN that is really a (stretched) DSTV frame → XMP
-    bool isDstv = results.decode_type == XMP;
+    bool learning = FwdLearning();
+    bool isOurs   = !learning && RemoteFilterMatch(CurrentFilter(), results, fwdMatchMs);
 
     // Own IR LED: next door, so normally not seen. Echo guard (Settings) is
     // only for an installation where the TSOP can see the IR LED.
@@ -147,17 +175,43 @@ static void HandleFrame() {
         }
     }
 
-    // LEDs show only the code type (as TV_IR_Sending): DSTV → GREEN, other → RED
-    if (isDstv) BoardFlashGreen();
+    // LEDs show only the code type (as TV_IR_Sending): forward remote → GREEN, other → RED
+    if (isOurs) BoardFlashGreen();
     else        BoardFlashRed();
 
-    if (!isDstv || recording || !FwdEnabled()) return;
+    // Settings "Learn remote": the next button press becomes the forward remote
+    if (learning && !recording && !ownTx) {
+        String txt = RemoteFilterLearn(results);
+        if (txt.length()) {
+            IrSetForwardRemote(txt);
+            FwdLearned(IrForwardRemoteText());
+        } else if (!results.repeat) {
+            StatusLog("Learn remote: this IR code is not recognised - try another button or remote");
+        }
+        return;
+    }
+
+    if (!isOurs || recording || !FwdEnabled()) return;
     if (ownTx && FwdEchoGuard()) return;
 
-    QueueDstvCode(results.value, results.bits);
+    if (results.decode_type == XMP) {          // DSTV: rebuilt as clean XMP
+        QueueDstvCode(results.value, results.bits);
+        portENTER_CRITICAL(&lastMux);
+        lastDstvValue = results.value;
+        haveLastDstv  = true;
+        lastWasDstv   = true;
+        portEXIT_CRITICAL(&lastMux);
+        return;
+    }
+    IrCode code;                               // learnt remote: sent as raw timing
+    if (results.overflow || !CodeFromResults(results, code)) return;
+    SendIrCode(code);
+    char buf[sizeof(lastOtherText)];
+    snprintf(buf, sizeof(buf), "%s", code.describe().c_str());
     portENTER_CRITICAL(&lastMux);
-    lastDstvValue = results.value;
-    haveLastDstv  = true;
+    memcpy(lastOtherText, buf, sizeof(buf));
+    haveLastDstv = true;
+    lastWasDstv  = false;
     portEXIT_CRITICAL(&lastMux);
 }
 
@@ -207,11 +261,15 @@ String IrForwardStateText() {
 }
 
 String IrLastDstvText() {
+    char other[sizeof(lastOtherText)];
     portENTER_CRITICAL(&lastMux);
     bool     have  = haveLastDstv;
+    bool     dstv  = lastWasDstv;
     uint64_t value = lastDstvValue;
+    memcpy(other, lastOtherText, sizeof(other));
     portEXIT_CRITICAL(&lastMux);
     if (!have) return "";
+    if (!dstv) return String(other);
     char buf[32];
     snprintf(buf, sizeof(buf), "XMP 0x%016llX", (unsigned long long)value);
     return String(buf);

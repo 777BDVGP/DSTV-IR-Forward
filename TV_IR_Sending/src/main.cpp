@@ -26,7 +26,9 @@
 // The Blaster was unreliable, so it is replaced by our own IR forwarding:
 // bedroom boards pick up the DSTV remote and send the codes by radio to a
 // board at the DSTV decoder, which replays them as IR. Only DSTV (XMP) remote
-// codes are forwarded; other remotes are ignored.
+// codes are forwarded; other remotes are ignored. Since 1.8.0 another TV box's
+// remote can be chosen instead (Settings "Forward remote" / "Learn remote",
+// RemoteFilter.h): it is forwarded as raw timing, which the RX replays.
 //
 // Link options considered: home network (UDP/HTTP), STX882 433 MHz RF modules,
 // ESP-NOW. Chosen: ESP-NOW — direct board-to-board WiFi frames, low latency,

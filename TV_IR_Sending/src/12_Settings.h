@@ -27,8 +27,8 @@ public:
 	bool   LogGeneralEvents    = true;    // Append timestamped entries to GeneralLog.txt
 	int    BootupWait          = 5000;    // Delay (ms) after InitFileSystem() before WiFi connect
 	bool   LearnMode           = false;   // Log all received IR codes to IRLog.txt
-	bool   RecordDSTVCode      = false;   // true = capture the next XMP frame's address into DSTVAddress
-	String DSTVAddress         = "";      // XMP device address to match (e.g. 0x4F); blank = any XMP
+	bool   LearnRemote         = false;   // true = the next button press sets ForwardRemote (then off again)
+	String ForwardRemote       = "XMP";   // which remote is forwarded: "XMP" (DSTV), "NEC 0x20DF" ... (RemoteFilter.h)
 
 	// ── Scheduled Reboot (1 slot) ─────────────────────────────────────────────
 	bool   RebootEnable        = true;    // Daily reboot armed/disarmed
@@ -50,8 +50,8 @@ public:
 	#define SET_LOG_GENERAL       1   // Log general events checkbox
 	#define SET_BOOTUP_DELAY      2   // Boot delay number input (ms)
 	#define SET_LEARN_MODE        3   // IR learn/capture mode checkbox
-	#define SET_RECORD_DSTV       4   // Record a DSTV Code checkbox (captures next XMP frame's address)
-	#define SET_DSTV_ADDR         5   // DSTV XMP address string
+	#define SET_LEARN_REMOTE      4   // Learn remote checkbox (next button press sets ForwardRemote)
+	#define SET_FWD_REMOTE        5   // Forward remote text ("XMP", "NEC 0x20DF")
 	#define SET_MOV_MUTE          6   // Mute buzzer while the TMOV is blown (until replaced)
 	#define SET_MOV_FITTED        7   // Surge protection parts fitted (off = no check, no buzzer)
 

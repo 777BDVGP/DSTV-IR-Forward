@@ -35,8 +35,8 @@ void AllParams::WriteData()
 	doc["LogGeneralEvents"] = LogGeneralEvents;
 	doc["BootupWait"]       = BootupWait;
 	doc["LearnMode"]        = LearnMode;
-	doc["RecordDSTVCode"]   = RecordDSTVCode;
-	doc["DSTVAddress"]      = DSTVAddress;
+	doc["LearnRemote"]      = LearnRemote;
+	doc["ForwardRemote"]    = ForwardRemote;
 	doc["MovBuzzerMute"]    = MovMuteChk;       // copy of the Board.cpp NVS flag (visible on FILES)
 	doc["RebootEnable"]     = RebootEnable;
 	doc["RebootTime"]       = RebootTime;
@@ -67,8 +67,10 @@ void AllParams::ReadData()
 				if ( doc["LogGeneralEvents"].as<String>() != "null" ){ LogGeneralEvents = (doc["LogGeneralEvents"].as<String>() == "true"); }
 				if ( doc["BootupWait"].as<String>()       != "null" ){ BootupWait       = doc["BootupWait"]; }
 				if ( doc["LearnMode"].as<String>()        != "null" ){ LearnMode        = (doc["LearnMode"].as<String>() == "true"); }
-				if ( doc["RecordDSTVCode"].as<String>()   != "null" ){ RecordDSTVCode   = (doc["RecordDSTVCode"].as<String>() == "true"); }
-				if ( doc["DSTVAddress"].as<String>()      != "null" ){ DSTVAddress      = doc["DSTVAddress"].as<String>(); }
+				// RecordDSTVCode / DSTVAddress (up to 1.7.1) are dropped: the old
+				// DSTV address was never used as a filter, so "XMP" is the same
+				if ( doc["LearnRemote"].as<String>()      != "null" ){ LearnRemote      = (doc["LearnRemote"].as<String>() == "true"); }
+				if ( doc["ForwardRemote"].as<String>()    != "null" ){ ForwardRemote    = doc["ForwardRemote"].as<String>(); }
 				if ( doc["MovBuzzerMute"].as<String>()    != "null" ){ MovMuteChk       = (doc["MovBuzzerMute"].as<String>() == "true"); }
 				// One reboot slot now; older files had three — keep what was slot 3
 				if ( doc["RebootEnable3"].as<String>()    != "null" ){ RebootEnable     = (doc["RebootEnable3"].as<String>() == "true"); }
@@ -107,12 +109,12 @@ void MapSettingsPage(){
 			case SET_LEARN_MODE:
 				SettingsList[i].Var = new PageElement(&Params->LearnMode, F("Diagnostic tool (log all IR to IRLog.txt)"), "", &SetStyle, i+ID_SETTINGS);
 				break;
-			case SET_RECORD_DSTV:
-				SettingsList[i].Var = new PageElement(&Params->RecordDSTVCode, F("Record a DSTV Code"), "", &SetStyle, i+ID_SETTINGS);
+			case SET_LEARN_REMOTE:
+				SettingsList[i].Var = new PageElement(&Params->LearnRemote, F("Learn remote: tick, UPDATE, then press a button on the TV box remote"), "", &SetStyle, i+ID_SETTINGS);
 				break;
-			case SET_DSTV_ADDR:
-				SettingsList[i].Var = new PageElement(&Params->DSTVAddress, F("DSTV XMP Address"), "", &SetStyle, i+ID_SETTINGS);
-				SettingsList[i].Var->SetPlaceholder("0x1A2B3C4D5E6F7A8B");
+			case SET_FWD_REMOTE:
+				SettingsList[i].Var = new PageElement(&Params->ForwardRemote, F("Forward remote (XMP = DSTV)"), "", &SetStyle, i+ID_SETTINGS);
+				SettingsList[i].Var->SetPlaceholder("XMP");
 				break;
 			case SET_MOV_MUTE:
 				SettingsList[i].Var = new PageElement(&MovMuteChk, F("Mute buzzer - MOV blown (until replaced)"), "", &SetStyle, i+ID_SETTINGS);
@@ -204,7 +206,15 @@ void UpdateSettingsPageValues(uint32_t clientId, JsonObject *root){
 		}
 	}
 
-	WebMessUpdate(clientId, "Parameters Updated!", "color: red", true);
+	String msg = "Parameters Updated!";
+	if (!IrSetForwardRemote(Params->ForwardRemote)) {        // typo → keep the remote that works
+		msg = "Forward remote '" + Params->ForwardRemote + "' not understood - kept " + IrForwardRemoteText();
+		Params->ForwardRemote = IrForwardRemoteText();
+	} else if (Params->ForwardRemote != IrForwardRemoteText()) {
+		Params->ForwardRemote = IrForwardRemoteText();       // tidy: "nec 0x20df" → "NEC 0x20DF"
+	}
+	if (Params->LearnRemote) msg += " Now press a button on the TV box remote.";
+	WebMessUpdate(clientId, msg, "color: red", true);
 	Params->WriteData();
 	EspNowSetRoomName(Params->SysName);   // RX shows the new room name at once
 	BoardMovSetMuted(MovMuteChk);   // Board.cpp ignores/clears it while the TMOV is OK

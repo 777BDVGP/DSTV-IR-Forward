@@ -9,7 +9,7 @@
 
 // ─── Board Revision ──────────────────────────────────────────────────────────
 	#define BRD_VERSION 1
-	#define FW_VERSION  "1.7.1"   // system version — keep equal to RX Config.h
+	#define FW_VERSION  "1.8.0"   // system version — keep equal to RX Config.h
 
 // ─── Debug / Production Switch ───────────────────────────────────────────────
 	#define DEBUG 1

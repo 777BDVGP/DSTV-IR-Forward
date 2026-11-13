@@ -25,6 +25,8 @@ so on.
   the bedroom reception was weak.
 - Result: you can use all your remotes normally in every room, and only the
   DSTV decoder reacts to the bedroom DSTV remote.
+- Not DStv? The sender can **learn another TV box's remote** instead — see
+  *Another TV box*.
 
 The only exception is on purpose and temporary: while you **record an IR
 sequence** from a sender's web page, that sender also passes on other remotes,
@@ -44,6 +46,10 @@ All three run on the same PCB (`PCB/IR_FORWARD_V1`), with a WEMOS LOLIN S2 Mini
 (ESP32-S2). Printable enclosure parts (.stl: case, lid, IR clip, LED holders)
 are in `Enclosure/`; the PCB (schematic, board, Gerber zip) is in `PCB/`.
 
+**Firmware on a new board in 2 minutes, from the browser:**
+https://777bdvgp.github.io/DSTV-IR-Forward/ (Chrome or Edge) — see step 6
+below.
+
 ## Building one, step by step
 
 ### 1. Order the PCB
@@ -55,7 +61,7 @@ board are in `PCB/` (also as `SCHEMATIC.jpg` and `PCB.jpg`).
 
 The finished PCB (S2 Mini not plugged in):
 
-![Built IR_FORWARD_V1 PCB](PCB/PCB_built.jpg)
+![Built IR_FORWARD_V1 PCB](PCB/PCB_BUILT.jpg)
 
 ### 2. Parts on the PCB
 
@@ -164,7 +170,7 @@ Both need a **USB-C data cable** (some cables only charge). Flash the S2 Mini
 #### A. In the browser (no software to install)
 
 1. Open the **Install page** of this project in **Chrome** or **Edge**
-   (`docs/index.html`, online at **INSTALL-PAGE-LINK** once published).
+   — **https://777bdvgp.github.io/DSTV-IR-Forward/** (the page is `docs/index.html`).
 2. Plug in the S2 Mini. Hold button **0**, tap **RST**, let go of **0**.
 3. Click **Sender**, **Receiver** or **All-in-One**, pick the port in the
    pop-up (often `ESP32-S2`), then **Install**. Answer **Erase** with yes for a
@@ -257,6 +263,31 @@ Open the board's IP (or `http://<host name>.local`) in a browser.
   times; per line: on/off, × repeats, every … ms, pause after).
 - **WIFI** page on every board, and `/wifiscan`: which access points the
   board hears, on which channel and how strong.
+
+## Another TV box (not DStv)
+
+Out of the box only the DStv remote is forwarded. For another TV box —
+Sky, Foxtel, a cable or satellite box, a Freeview box … — teach the sender
+(or the All-in-One) that box's remote:
+
+1. Open the board's **Settings** page.
+2. Tick **Learn remote**, press **UPDATE**.
+3. Point the TV box's remote at the board and press one button (shortly).
+4. **Forward remote** now shows that remote, e.g. `NEC 0x20DF`, and
+   *Learn remote* is unticked again. From now on only that remote is
+   forwarded — green LED; every other remote is ignored — red LED.
+
+Back to DStv: type `XMP` in **Forward remote** and press **UPDATE**. You can
+also type a remote yourself: a protocol name (`NEC`, `SAMSUNG`, `RC5`, `RC6`,
+`SONY`, `PANASONIC`, …), optionally followed by the address of that remote.
+
+Good to know:
+- A DStv code is rebuilt with exact timing. Other remotes are passed on as the
+  timing the board received — that works for most remotes, but test it.
+- Remotes with very long codes (more than 100 pulses) cannot be forwarded,
+  and remotes that use Bluetooth or radio instead of infrared (e.g. Sky Q,
+  Apple TV) cannot be used at all.
+- With several senders, teach each sender the same remote.
 
 ## Firmware updates over WiFi
 

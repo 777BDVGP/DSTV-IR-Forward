@@ -53,6 +53,8 @@ String SysName();                                 // WebSettings.cpp — shown i
 void SaveParams();                                // WebSettings.cpp — rewrite /AllParams.json
 bool FwdEnabled();                                // WebSettings.cpp — DSTV forwarding on
 bool FwdEchoGuard();                              // WebSettings.cpp — ignore frames during own IR send
+bool FwdLearning();                               // WebSettings.cpp — "Learn remote" ticked
+void FwdLearned(const String &remote);            // WebSettings.cpp — learnt: store, untick, save
 void AddAboutRoutes(AsyncWebServer &server);      // WebAbout.cpp
 void AddUpdateRoutes(AsyncWebServer &server);     // WebUpdate.cpp — /update firmware upload
 extern const char WEB_STYLE_CSS[];                // WebPage.cpp

@@ -31,7 +31,9 @@
 //   DSTV remote ─► TSOP ─► S2 Mini ── wires ──► IR LED ─► DSTV decoder
 //
 // ── IR rules ─────────────────────────────────────────────────────────────────
-//   * Only DSTV (XMP) codes are forwarded; other remotes are ignored.
+//   * Only DSTV (XMP) codes are forwarded; other remotes are ignored. Since
+//     1.3.0 another TV box's remote can be chosen instead (Settings "Forward
+//     remote" / "Learn remote", RemoteFilter.h), sent out as raw timing.
 //   * Forwarded codes are rebuilt as clean XMP (exact timing via RMT), not
 //     copied raw, so a poorly received frame still reaches the decoder clean.
 //     A tolerant XMP decode (RecoverXmp, from TV_IR_Sending v1.4.4) catches
