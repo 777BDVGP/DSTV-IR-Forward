@@ -85,10 +85,14 @@ to put the firmware on it (step 6):
 | 1 | Resistor SMD 0805 | 4.7 kΩ | R48 |
 | 1 | Screw terminal, 5.08 mm, 2-pole | mains in | 220VAC IN |
 | 3 | Pin header 3-pin, 2.54 mm | TSOP, IR LEDs, red/green LED | TSOP31238, IR OUT, RED LED GREEN |
-| 1 | Pin header 2-pin, 2.54 mm | spare input | INPUT |
+| 1 | Pin header 2-pin, 2.54 mm — **optional, may stay empty** | spare input, not used (see below) | INPUT |
 | 2 | Pin header 2-pin + jumper | S2 Mini power: fit **LINK 5V**, leave **LINK 3.3V** open | LINK 5V, LINK 3.3V |
 
 All headers are plain 2.54 mm (0.1", DuPont) — the cables use DuPont plugs.
+
+**INPUT header — spare:** it is wired to the S2 Mini (GPIO 6, shorted to GND
+= on), but no firmware uses it — nothing happens when it is switched. It is
+there for a future idea; you can leave the header off the board.
 
 **Surge protection (optional):** these parts only protect the board against
 mains surges and let the firmware watch that protection. You can leave them
