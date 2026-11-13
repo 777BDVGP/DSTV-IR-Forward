@@ -145,6 +145,17 @@ case for how the board will be placed:
 
 Extra parts in the folder: `Lid`, `Angle`, `RoomLEDSupr`.
 
+**Fixing the PCB in the case.** Two ways, use whichever you have:
+
+- **Brass inserts (optional):** press threaded brass heat-set inserts into
+  the posts in the case with a hot soldering iron, then screw the PCB down
+  onto them from the inside.
+- **No inserts?** Use ordinary **countersunk screws from the bottom**: put
+  each screw in from under the case, through the countersunk hole, so its
+  head sits flush with the bottom, and use it to hold the PCB down in the case.
+
+![Brass inserts (top and bottom) and a countersunk screw hole (middle) in the case](Enclosure/BRASS_INSERTS.jpg)
+
 ### 5. Assembly
 
 1. Solder the SMD parts first (resistors, AMS1117, and the optional M7 /
