@@ -68,7 +68,7 @@ The finished PCB (S2 Mini not plugged in):
 | Qty | Part | Value / type | Silkscreen |
 |---|---|---|---|
 | 1 | WEMOS LOLIN **S2 Mini** (ESP32-S2) + 2 × **female** headers | plugs onto the two double pin rows | WEMOS MINI |
-| 1 | AC/DC power module | **MORNSUN LD05-23B05R2-M** (230 V → 5 V) | MORNSUN |
+| 1 | AC/DC power module | **MORNSUN LD05-23B05R2-M** (100–277 V AC → 5 V) | MORNSUN |
 | 1 | Voltage regulator | **AMS1117-3.3**, SOT-223 | 3.3VOLT |
 | 2 | NPN transistor | **2N2222**, TO-92 | 2N2222 |
 | 3 | Electrolytic capacitor | 220 µF, 16 V | C2, C3, C6 |
@@ -108,6 +108,18 @@ alarm (status **BLOWN**, buzzer beeps). Meanwhile you can switch the buzzer
 off with the tick box **Mute buzzer - MOV blown** on the *Settings* page
 until the TMOV is replaced.
 
+**110–120 V countries (USA, Canada, Japan …):** the MORNSUN module works on
+100–277 V, 50 or 60 Hz, so it stays the same — the "220VAC" on the PCB is only
+printing. Two surge protection parts are made for 230 V:
+
+- **TMOV:** use the 120 V version **Littelfuse TMOV20RP140E** (same size and
+  footprint). The 275 V one is safe on 120 V but hardly protects.
+- **4N35 monitor** (5 × 10 kΩ): on 120 V the 4N35 gets about half the current.
+  It should still see the mains pulses — not tested. If the status shows
+  **BLOWN** with a good TMOV, use 5 × 4.7 kΩ instead.
+
+Or leave the surge protection out and untick *Surge protection parts fitted*.
+
 ### 3. Parts on cables (off the PCB)
 
 | Part | Sender | Receiver | All-in-One | Connects to |
@@ -115,7 +127,7 @@ until the TMOV is replaced.
 | **TSOP31238** IR receiver (38 kHz) | yes | optional (to record sequences on the receiver itself) | yes | TSOP31238 |
 | **IR LED** 940 nm, e.g. TSAL6200 — 1 to 4 | — | yes | yes | IR OUT |
 | **Red** and **green** 5 mm LED | yes | optional | yes | RED LED GREEN |
-| 230 V cable with plug | yes | yes | yes | 220VAC IN |
+| Mains cable with plug | yes | yes | yes | 220VAC IN |
 
 The red / green LEDs show what happens to each IR signal: on a sender
 **green** = DSTV code forwarded, **red** = other remote, ignored.
@@ -148,9 +160,9 @@ Extra parts in the folder: `Lid`, `Angle`, `RoomLEDSupr`.
    2.54 mm DuPont plugs.
 6. **Before connecting mains:** flash the firmware over USB (next section) —
    the S2 Mini gets its power from USB then. Program it **off** the board or
-   with the 230 V disconnected.
+   with the mains disconnected.
 
-**Safety:** the PCB carries 230 V. Never touch the board while it is
+**Safety:** the PCB carries mains voltage (230 V or 120 V). Never touch the board while it is
 connected to mains, and always fit it in its closed enclosure. Have the mains
 wiring checked by a qualified person.
 
@@ -165,7 +177,7 @@ Two ways — pick one:
 | Time | about 2 minutes | about 20 minutes the first time |
 
 Both need a **USB-C data cable** (some cables only charge). Flash the S2 Mini
-**off the PCB**, or with the 230 V disconnected — it gets its power from USB.
+**off the PCB**, or with the mains disconnected — it gets its power from USB.
 
 #### A. In the browser (no software to install)
 
@@ -364,5 +376,5 @@ share and change it for **non-commercial** purposes, with credit to the author.
 Selling the firmware, boards, enclosures or devices built from them is not
 allowed. See `LICENSE`.
 
-**Safety:** the board runs from 230 V mains. Building and installing it is at
+**Safety:** the board runs from mains voltage (230 V or 120 V). Building and installing it is at
 your own risk — have mains wiring done or checked by a qualified person.
