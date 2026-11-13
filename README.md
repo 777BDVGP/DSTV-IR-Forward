@@ -113,9 +113,16 @@ The red / green LEDs show what happens to each IR signal: on a sender
 
 ### 4. Enclosure
 
-3D-printable parts are in `Enclosure/` (.stl): `Case`, `Case2`, `Case3`,
-`Lid`, `Angle`, `IR_Clip` (holds an IR LED in front of the decoder),
-`RoomLEDHolder` and `RoomLEDSupr` (LED holder and support).
+3D-printable parts are in `Enclosure/` (.stl), printed in **PLA**. Pick the
+case for how the board will be placed:
+
+| Board | Print | Placement |
+|---|---|---|
+| Sender, box visible | `Case.stl` + `IR_Clip.stl` | the IR receiver (TSOP) is clipped on the inside of the box, at the side |
+| Sender, box hidden | `Case2.stl` + `RoomLEDHolder.stl` | the box is hidden; the IR receiver and the red / green LEDs sit in the holder, mounted in the frame of the TV stand |
+| Receiver | `Case3.stl` | hidden (e.g. in the roof), with wires out to **2 IR LEDs** pointed at the DSTV decoder |
+
+Extra parts in the folder: `Lid`, `Angle`, `RoomLEDSupr`.
 
 ### 5. Assembly
 
