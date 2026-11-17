@@ -5,6 +5,9 @@ small board in the bedroom picks up the remote's infrared signal and sends it
 over WiFi (ESP-NOW, board to board) to a board at the decoder, which sends it
 out again on an infrared LED in front of the decoder.
 
+**Project page:** https://zanaz.co.za/project-irforward.html — photos, build guide,
+downloads and a contact form for questions.
+
 ### Why this project: only DSTV gets through
 
 There are many ways to carry infrared from one room to another — IR repeaters,
