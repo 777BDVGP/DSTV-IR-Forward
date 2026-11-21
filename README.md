@@ -57,8 +57,9 @@ Edge) — see step 6 below.
 
 ### 1. Order the PCB
 
-Upload `PCB/IR_FORWARD_V1_2026-10-04.zip` (the Gerber files) to a PCB maker
-such as JLCPCB or PCBWay: 2 layers, 1.6 mm, default settings. The same PCB is
+Upload `PCB/IR_FORWARD_V1_2026-10-04.zip` (the Gerber files) to [PCBWay](https://www.pcbway.com/)
+— I have my own boards made there and can recommend them: easy to order, good quality and
+quick delivery — or any other PCB maker: 2 layers, 1.6 mm, default settings. The same PCB is
 used for the sender, the receiver and the All-in-One. The Eagle schematic and
 board are in `PCB/` (also as `SCHEMATIC.jpg` and `PCB.jpg`).
 
